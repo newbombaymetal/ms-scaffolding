@@ -125,6 +125,7 @@ function showView(name) {
 }
 
 function renderAll() {
+  renderPaymentSummary();
   renderStats();
   renderUsageChart();
   renderInsights();
@@ -133,6 +134,16 @@ function renderAll() {
   renderParties();
   renderInvoices();
   renderProfile();
+}
+
+function renderPaymentSummary() {
+  const toPay = payableSummary();
+  const toCollect = receivableSummary();
+
+  setText('to-pay-amount', formatMoney(toPay.amount));
+  setText('to-collect-amount', formatMoney(toCollect.amount));
+  setText('to-pay-count', paymentCountLabel(toPay.count, 'payment'));
+  setText('to-collect-count', paymentCountLabel(toCollect.count, 'collection'));
 }
 
 function renderStats() {
@@ -148,6 +159,64 @@ function renderStats() {
 
   const lowestRemaining = Math.min(...sampleBillBooks.map(book => book.total - book.used));
   setText('days-left', `${Math.max(1, Math.min(5, lowestRemaining))} days`);
+}
+
+function payableSummary() {
+  const payableTypes = new Set(['PURCHASE', 'HIRE_IN', 'EXPENSE', 'TO_PAY', 'PAYABLE']);
+  const rows = state.transactions.filter(tx => {
+    const type = String(tx.type || '').toUpperCase();
+    const status = String(tx.paymentStatus || tx.status || '').toUpperCase();
+    return payableTypes.has(type) && status !== 'PAID' && status !== 'RECEIVED';
+  });
+
+  return {
+    amount: rows.reduce((sum, tx) => sum + transactionBalance(tx), 0),
+    count: rows.length
+  };
+}
+
+function receivableSummary() {
+  const rows = state.transactions.filter(isDueSale);
+  return {
+    amount: rows.reduce((sum, tx) => sum + dueOutstandingAmount(tx), 0),
+    count: rows.filter(tx => dueOutstandingAmount(tx) > 0).length
+  };
+}
+
+function isDueSale(tx) {
+  const type = String(tx.type || '').toUpperCase();
+  const status = String(tx.paymentStatus || tx.status || '').toUpperCase();
+  return ['SALE', 'HIRE_OUT', 'INVOICE'].includes(type) && ['DUE', 'UNPAID', 'PARTIAL', 'PENDING'].includes(status);
+}
+
+function dueOutstandingAmount(sale) {
+  const total = Number(sale.totalAmount ?? sale.amount ?? sale.invoiceValue) || 0;
+  const paid = state.transactions
+    .filter(tx => paymentMatchesDueSale(tx, sale))
+    .reduce((sum, tx) => sum + (Number(tx.totalAmount ?? tx.amount ?? tx.paidAmount) || 0), 0);
+  return Math.max(0, total - paid);
+}
+
+function paymentMatchesDueSale(payment, sale) {
+  const type = String(payment.type || '').toUpperCase();
+  if (!['PAYMENT', 'RECEIPT', 'COLLECTION'].includes(type)) return false;
+  if (payment.dueSourceId && payment.dueSourceId === sale.id) return true;
+  if (payment.dueSourceBillNo && sale.billNo && payment.dueSourceBillNo === sale.billNo) return true;
+  return payment.billNo && sale.billNo && payment.billNo === sale.billNo;
+}
+
+function transactionBalance(tx) {
+  const total = Number(tx.totalAmount ?? tx.amount ?? tx.invoiceValue) || 0;
+  const paid = Number(tx.paidAmount ?? tx.cashAmount ?? 0) + Number(tx.onlineAmount ?? 0);
+  const status = String(tx.paymentStatus || tx.status || '').toUpperCase();
+  if (['DUE', 'UNPAID', 'PARTIAL', 'PENDING'].includes(status)) {
+    return Math.max(0, total - paid);
+  }
+  return total;
+}
+
+function paymentCountLabel(count, noun) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
 function renderUsageChart() {

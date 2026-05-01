@@ -329,7 +329,7 @@ svg {
 }
 
 .hero-column h3 {
-  margin-top: 20px;
+  margin-top: 0;
   font-size: clamp(18px, 2vw, 24px);
   line-height: 1.15;
 }
@@ -338,6 +338,22 @@ svg {
   margin: 10px 0 0;
   color: var(--soft);
   line-height: 1.45;
+}
+
+.hero-payment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.hero-amount {
+  color: var(--cyan);
+  font-size: clamp(19px, 2.2vw, 28px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .primary-action,
@@ -884,12 +900,23 @@ svg {
   }
 
   .hero-column h3 {
-    margin-top: 14px;
     font-size: 15px;
   }
 
   .hero-column p {
     font-size: 12px;
+  }
+
+  .hero-payment-row {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .hero-amount {
+    font-size: 19px;
   }
 
   .stats-grid,

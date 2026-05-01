@@ -1,10 +1,10 @@
 /* BillX Neo — service worker for offline cache. */
-const CACHE = 'billx-neo-v33';
+const CACHE = 'billx-neo-v34';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=33',
-  './app.js?v=33',
+  './styles.css?v=34',
+  './app.js?v=34',
   './manifest.json',
   './icons/icon-180.png',
   './icons/icon-192.png',
