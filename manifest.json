@@ -1,0 +1,16 @@
+{
+  "name": "MS Scaffolding",
+  "short_name": "Scaffolding",
+  "description": "MS Scaffolding business — invoices, e-way bills, entries, customers. Works offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F9FAFB",
+  "theme_color": "#2563EB",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
