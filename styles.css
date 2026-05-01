@@ -444,6 +444,73 @@ svg {
   font-size: 14px;
 }
 
+.stock-card {
+  display: grid;
+  gap: 16px;
+}
+
+.stock-summary h3 {
+  margin: 0 0 6px;
+  font-size: clamp(28px, 3vw, 36px);
+}
+
+.stock-chart {
+  height: 86px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+
+.stock-bar {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(103, 232, 249, 0.1);
+}
+
+.stock-bar-fill {
+  width: 100%;
+  min-height: 12%;
+  border-radius: inherit;
+  background: linear-gradient(0deg, var(--blue), var(--cyan));
+  box-shadow: 0 0 18px rgba(103, 232, 249, 0.28);
+}
+
+.stock-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stock-legend div {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.stock-legend span,
+.stock-legend strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-legend span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.stock-legend strong {
+  margin-top: 3px;
+  color: var(--cyan);
+  font-size: 12px;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);

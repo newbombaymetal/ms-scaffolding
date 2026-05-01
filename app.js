@@ -9,6 +9,13 @@ const sampleBillBooks = [
   { name: 'DUE PAYMENT BOOK', type: 'Collections', used: 71, total: 90, status: 'Watch' }
 ];
 
+const fallbackStockItems = [
+  { name: 'MS Pipe', kg: 1840 },
+  { name: 'GI Pipe', kg: 1260 },
+  { name: 'Channel', kg: 920 },
+  { name: 'Sheet', kg: 640 }
+];
+
 const fallbackParties = [
   { name: 'Raj Traders', phone: '98765 43210', amount: 8500 },
   { name: 'Metro Hardware', phone: '98765 01003', amount: 7000 },
@@ -127,6 +134,7 @@ function showView(name) {
 function renderAll() {
   renderPaymentSummary();
   renderStats();
+  renderStockChart();
   renderUsageChart();
   renderInsights();
   renderActivity();
@@ -149,10 +157,8 @@ function renderPaymentSummary() {
 function renderStats() {
   const invoiceCount = invoiceTransactions().length;
   const partyCount = state.customers.length;
-  const billBookCount = state.billBooks?.length || 128;
   const activeSeries = Math.min(86, Math.max(1, sampleBillBooks.filter(book => book.used < book.total).length + 80));
 
-  setText('stat-books', formatNumber(billBookCount));
   setText('stat-series', formatNumber(activeSeries));
   setText('stat-parties', formatNumber(Math.max(partyCount, 532)));
   setText('stat-invoices', formatNumber(Math.max(invoiceCount, 24560)));
@@ -217,6 +223,102 @@ function transactionBalance(tx) {
 
 function paymentCountLabel(count, noun) {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+function renderStockChart() {
+  const stockItems = stockSummaryItems();
+  const totalKg = stockItems.reduce((sum, item) => sum + item.kg, 0);
+  const maxKg = Math.max(1, ...stockItems.map(item => item.kg));
+  const chart = document.getElementById('stock-chart');
+  const legend = document.getElementById('stock-legend');
+
+  setText('stock-total-kg', formatNumber(totalKg));
+  setText('stock-item-count', `${stockItems.length} material${stockItems.length === 1 ? '' : 's'} in stock`);
+
+  if (!chart || !legend) return;
+
+  chart.innerHTML = stockItems.map(item => `
+    <div class="stock-bar" title="${escapeAttr(`${item.name}: ${formatNumber(item.kg)} kg`)}">
+      <div class="stock-bar-fill" style="height:${Math.max(12, Math.round((item.kg / maxKg) * 100))}%"></div>
+    </div>
+  `).join('');
+
+  legend.innerHTML = stockItems.map(item => `
+    <div>
+      <span>${escapeHtml(shortStockName(item.name))}</span>
+      <strong>${formatNumber(item.kg)} kg</strong>
+    </div>
+  `).join('');
+}
+
+function stockSummaryItems() {
+  const explicit = [
+    ...arrayFromState('stock'),
+    ...arrayFromState('stockItems'),
+    ...arrayFromState('inventory'),
+    ...arrayFromState('catalog')
+  ].map(normalizeStockItem).filter(item => item.kg > 0);
+
+  const fromTransactions = stockFromTransactions();
+  const merged = mergeStockItems(explicit.length ? explicit : fromTransactions);
+  return (merged.length ? merged : fallbackStockItems).slice(0, 4);
+}
+
+function arrayFromState(key) {
+  return Array.isArray(state[key]) ? state[key] : [];
+}
+
+function normalizeStockItem(item) {
+  const name = item.name || item.productName || item.itemName || item.description || 'Material';
+  const kg = Number(
+    item.kg ?? item.stockKg ?? item.quantityKg ?? item.weightKg ?? item.weight ?? item.qtyKg ?? item.quantity
+  ) || 0;
+  return { name: String(name), kg: Math.max(0, Math.round(kg)) };
+}
+
+function stockFromTransactions() {
+  const stockMap = new Map();
+  state.transactions.forEach(tx => {
+    const type = String(tx.type || '').toUpperCase();
+    const direction = ['PURCHASE', 'HIRE_IN', 'STOCK_IN'].includes(type)
+      ? 1
+      : ['SALE', 'HIRE_OUT', 'STOCK_OUT'].includes(type)
+        ? -1
+        : 0;
+    if (!direction) return;
+
+    const items = Array.isArray(tx.items) && tx.items.length
+      ? tx.items
+      : [{ productName: tx.productName, quantity: tx.quantity, kg: tx.kg, weightKg: tx.weightKg }];
+
+    items.forEach(item => {
+      const normalized = normalizeStockItem(item);
+      if (!normalized.name || normalized.kg <= 0) return;
+      const key = normalized.name.toLowerCase();
+      stockMap.set(key, {
+        name: normalized.name,
+        kg: Math.max(0, (stockMap.get(key)?.kg || 0) + normalized.kg * direction)
+      });
+    });
+  });
+  return Array.from(stockMap.values()).filter(item => item.kg > 0);
+}
+
+function mergeStockItems(items) {
+  const stockMap = new Map();
+  items.forEach(item => {
+    const key = String(item.name || 'Material').toLowerCase();
+    const previous = stockMap.get(key);
+    stockMap.set(key, {
+      name: previous?.name || item.name,
+      kg: (previous?.kg || 0) + (Number(item.kg) || 0)
+    });
+  });
+  return Array.from(stockMap.values()).sort((a, b) => b.kg - a.kg);
+}
+
+function shortStockName(name) {
+  return String(name || 'Stock').replace(/\s+/g, ' ').trim().split(' ').slice(0, 2).join(' ');
 }
 
 function renderUsageChart() {
