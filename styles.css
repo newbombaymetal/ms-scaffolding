@@ -216,8 +216,7 @@ svg {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: flex-start;
 }
 
 .topbar h2 {
@@ -231,13 +230,13 @@ svg {
 }
 
 .search-box {
-  width: min(100%, 384px);
+  width: min(100%, 720px);
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 13px 16px;
+  padding: 17px 20px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 22px;
   background: var(--panel);
   color: var(--muted);
 }

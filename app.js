@@ -117,8 +117,8 @@ function wireEvents() {
 function showView(name) {
   currentView = name;
   const [title, subtitle] = titles[name] || titles.dashboard;
-  document.getElementById('view-title').textContent = title;
-  document.getElementById('view-subtitle').textContent = subtitle;
+  setText('view-title', title);
+  setText('view-subtitle', subtitle);
 
   document.querySelectorAll('.view-panel').forEach(panel => {
     panel.classList.toggle('hidden', panel.id !== `view-${name}`);
