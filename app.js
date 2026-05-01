@@ -52,10 +52,23 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAll();
   wireEvents();
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(reg => reg.update()).catch(() => {});
-  }
+  registerServiceWorker();
 });
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  let refreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshed) return;
+    refreshed = true;
+    window.location.reload();
+  });
+
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => reg.update())
+    .catch(() => {});
+}
 
 function loadState() {
   try {
@@ -83,7 +96,8 @@ function wireEvents() {
   document.querySelectorAll('[data-open-ai]').forEach(button => button.addEventListener('click', openAi));
   document.getElementById('ai-close').addEventListener('click', closeAi);
   document.getElementById('ask-ai').addEventListener('click', answerAi);
-  document.getElementById('create-book').addEventListener('click', () => toast('New bill book flow ready'));
+  const createBook = document.getElementById('create-book');
+  if (createBook) createBook.addEventListener('click', () => toast('New bill book flow ready'));
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
   document.getElementById('new-invoice').addEventListener('click', () => toast('Invoice creator can be wired next'));
   document.getElementById('clear-search').addEventListener('click', () => {

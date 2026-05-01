@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=30">
+  <link rel="stylesheet" href="styles.css?v=33">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -79,21 +79,21 @@
 
       <section class="view-panel" id="view-dashboard">
         <section class="hero-card">
-          <div class="hero-inner">
-            <div class="hero-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-            </div>
-            <div>
-              <h3>AI Business Insight</h3>
-              <p>
-                Your sales bill book may finish in
-                <strong id="days-left">5 days</strong>. Create a new series now to avoid billing interruption.
-              </p>
-              <button class="accent-action" id="create-book">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                Create New Bill Book
-              </button>
-            </div>
+          <div class="hero-columns">
+            <article class="hero-column searchable-item" data-search="to pay supplier labour payable">
+              <div class="hero-column-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <h3>To Pay</h3>
+              <p>Supplier and labour payables</p>
+            </article>
+            <article class="hero-column searchable-item" data-search="to collect customer due payment collection">
+              <div class="hero-column-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V8H4v8h16v-4Z"/><path d="M4 8l8 5 8-5"/><path d="M8 18h8"/></svg>
+              </div>
+              <h3>To Collect</h3>
+              <p>Pending customer collections</p>
+            </article>
           </div>
         </section>
 
@@ -254,6 +254,6 @@
   </div>
 
   <div class="toast hidden" id="toast"></div>
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>
