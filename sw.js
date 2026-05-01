@@ -1,10 +1,10 @@
-/* Sales & Maintenance — service worker for offline cache. */
-const CACHE = 'sm-v20';
+/* BillX Neo — service worker for offline cache. */
+const CACHE = 'billx-neo-v30';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=20',
-  './app.js?v=20',
+  './styles.css?v=30',
+  './app.js?v=30',
   './manifest.json',
   './icons/icon-180.png',
   './icons/icon-192.png',

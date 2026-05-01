@@ -1,13 +1,13 @@
 {
-  "name": "MS Scaffolding",
-  "short_name": "Scaffolding",
-  "description": "MS Scaffolding business — invoices, e-way bills, entries, customers. Works offline.",
+  "name": "BillX Neo",
+  "short_name": "BillX Neo",
+  "description": "AI bill book dashboard for bill books, parties, invoices, and insights. Works offline.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F9FAFB",
-  "theme_color": "#2563EB",
+  "background_color": "#070B16",
+  "theme_color": "#070B16",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

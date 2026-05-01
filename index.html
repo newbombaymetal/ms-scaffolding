@@ -2,592 +2,258 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#2563EB">
-  <title>MS Scaffolding</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070B16">
+  <title>BillX Neo</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Scaffolding">
+  <meta name="apple-mobile-web-app-title" content="BillX Neo">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=20">
+  <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
 
-<header class="topbar" id="topbar">
-  <button class="iconbtn" id="menu-btn" aria-label="Menu">
-    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
-  </button>
-  <h1 id="page-title">Dashboard</h1>
-  <button class="iconbtn" id="bell-btn" aria-label="Search">
-    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-  </button>
-</header>
+  <div class="app-shell">
+    <button class="mobile-menu" id="mobile-menu" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
 
-<main id="main">
-
-  <!-- ── DASHBOARD ─────────────────────────────────────────────── -->
-  <section id="view-dashboard" class="view">
-    <div class="greeting">
-      <h2 id="greeting-text">MS Scaffolding</h2>
-      <p class="muted">Here's what's happening today.</p>
-    </div>
-
-    <div class="card hero-card">
-      <div class="row spread">
-        <span class="hero-label">Today's Summary</span>
-        <span class="hero-date" id="today-date"></span>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-icon glow-blue">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+        </div>
+        <div>
+          <h1>BillX Neo</h1>
+          <p>AI Bill Book System</p>
+        </div>
       </div>
-      <p class="muted small">Total Sales (Invoices)</p>
-      <div class="row spread bottom">
-        <span class="hero-amount">₹ <span id="hero-sales">0</span></span>
+
+      <nav class="nav-list" aria-label="Primary">
+        <button class="nav-item active" data-view="dashboard">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10Zm10 8h8v-6h-8v6ZM3 21h8v-6H3v6Zm10-8h8V3h-8v10Z"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" data-view="bill-books">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+          Bill Books
+        </button>
+        <button class="nav-item" data-view="parties">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Parties
+        </button>
+        <button class="nav-item" data-view="invoices">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          Invoices
+        </button>
+        <button class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.38 1.06V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.6 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.06-.38H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.9l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6 1.65 1.65 0 0 0 .38-1.06V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15.4 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.14.72 0 1.06.24.17.6.38 1.06.38H21a2 2 0 1 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"/></svg>
+          Settings
+        </button>
+      </nav>
+
+      <div class="assistant-card">
+        <p>AI Assistant</p>
+        <h2>Ask anything</h2>
+        <button class="primary-action" data-open-ai>Open AI</button>
       </div>
-    </div>
+    </aside>
 
-    <div class="metric-row">
-      <div class="metric-card" data-nav="invoices">
-        <div class="metric-icon blue"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 2H5a2 2 0 00-2 2v18l4-2 4 2 4-2 4 2V4a2 2 0 00-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V6h10v2z"/></svg></div>
-        <div class="metric-label">Total Invoices</div>
-        <div class="metric-value"><span id="m-inv-count">0</span></div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-icon orange"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></div>
-        <div class="metric-label">E-way Bills</div>
-        <div class="metric-value"><span id="m-ewb-count">0</span></div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-icon red"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
-        <div class="metric-label">Customers</div>
-        <div class="metric-value"><span id="m-cust-count">0</span></div>
-      </div>
-    </div>
+    <div class="drawer-backdrop hidden" id="drawer-backdrop"></div>
 
-    <h3 class="section-title">Recent Invoices</h3>
-    <div id="recent-invoices-list" class="list"></div>
-
-    <h3 class="section-title">Recent Entries</h3>
-    <div id="recent-list" class="list"></div>
-
-    <div class="bottom-pad"></div>
-  </section>
-
-  <!-- ── INVOICES ───────────────────────────────────────────────── -->
-  <section id="view-invoices" class="view hidden">
-    <div class="seg" id="inv-type-seg">
-      <button class="seg-item active" data-inv-filter="">All</button>
-      <button class="seg-item" data-inv-filter="SALE">Sale</button>
-      <button class="seg-item" data-inv-filter="PURCHASE">Purchase</button>
-      <button class="seg-item" data-inv-filter="HIRE_OUT">Hire Out</button>
-      <button class="seg-item" data-inv-filter="HIRE_IN">Hire In</button>
-    </div>
-    <input class="search" id="inv-search" placeholder="Search invoice no. or customer…">
-    <div id="invoices-list" class="list"></div>
-    <div class="bottom-pad"></div>
-  </section>
-
-  <!-- ── E-WAY BILLS ────────────────────────────────────────────── -->
-  <section id="view-eway" class="view hidden">
-    <input class="search" id="eway-search" placeholder="Search e-way bills…">
-    <div id="eway-list" class="list"></div>
-    <div class="bottom-pad"></div>
-  </section>
-
-  <!-- ── ADD ENTRY ──────────────────────────────────────────────── -->
-  <section id="view-add" class="view hidden">
-    <div class="seg" id="type-seg">
-      <button class="seg-item active" data-type="SALE">Sale</button>
-      <button class="seg-item" data-type="EXPENSE">Advance Payment</button>
-      <button class="seg-item" data-type="PAYMENT">Due Payment</button>
-    </div>
-
-    <label class="field"><span>Customer Name</span>
-      <input id="f-customer" placeholder="Select Customer" list="customers-list" autocomplete="off">
-      <datalist id="customers-list"></datalist>
-    </label>
-    <label class="field"><span>Mobile Number</span>
-      <input id="f-mobile" placeholder="Mobile Number" inputmode="numeric" list="mobile-list" autocomplete="off">
-      <datalist id="mobile-list"></datalist>
-    </label>
-    <label class="field"><span id="bill-label">Bill / Invoice No.</span>
-      <input id="f-bill">
-    </label>
-    <label class="field"><span>Date</span>
-      <input id="f-date" type="text" readonly>
-    </label>
-
-    <div class="item-section">
-      <div class="row spread section-head"><strong id="items-title">Items</strong></div>
-      <div class="card item-card item-summary" id="item-summary">
-        <strong id="item-summary-placeholder">Select product</strong>
-      </div>
-    </div>
-
-    <div class="label-block">Payment Method</div>
-    <div class="payment-split" id="payment-split">
-      <label class="payment-box active" data-payment-box="cash">
-        <span>Cash</span>
-        <input id="f-cash" type="number" inputmode="decimal" step="0.01" min="0">
-      </label>
-      <label class="payment-box" data-payment-box="online">
-        <span>Online</span>
-        <input id="f-online" type="number" inputmode="decimal" step="0.01" min="0" value="0">
-      </label>
-    </div>
-
-    <div class="row spread total-row">
-      <strong>Total Amount</strong>
-      <span class="total-amt">₹ <span id="f-total">0</span></span>
-    </div>
-    <button class="btn primary save-btn" id="save-entry">Save Entry</button>
-    <div class="bottom-pad"></div>
-  </section>
-
-  <!-- ── CUSTOMERS ─────────────────────────────────────────────── -->
-  <section id="view-customers" class="view hidden">
-    <input class="search" id="customers-search" placeholder="Search Customer">
-    <div id="customers-rows" class="list"></div>
-    <button class="btn primary fixed-bottom" id="add-customer-btn">＋ Add Customer</button>
-    <div class="bottom-pad"></div>
-  </section>
-
-  <!-- ── CATALOG ───────────────────────────────────────────────── -->
-  <section id="view-catalog" class="view hidden">
-    <input class="search" id="catalog-search" placeholder="Search items…">
-    <div id="catalog-list" class="list"></div>
-    <div class="bottom-pad"></div>
-  </section>
-
-  <!-- ── REPORTS ───────────────────────────────────────────────── -->
-  <section id="view-reports" class="view hidden">
-    <div class="seg" id="reports-mode">
-      <button class="seg-item active" data-report-mode="summary">Reports</button>
-      <button class="seg-item" data-report-mode="entries">Entries</button>
-      <button class="seg-item" data-report-mode="advance-history">Advance</button>
-      <button class="seg-item" data-report-mode="due-history">Due</button>
-    </div>
-    <div id="reports-summary-panel">
-      <div class="seg" id="period-seg">
-        <button class="seg-item" data-period="day">Daily</button>
-        <button class="seg-item active" data-period="month">Monthly</button>
-        <button class="seg-item" data-period="year">Yearly</button>
-      </div>
-      <div class="card month-nav">
-        <button class="iconbtn dark" id="prev-month">‹</button>
-        <strong id="report-title"></strong>
-        <button class="iconbtn dark" id="next-month">›</button>
-      </div>
-      <div class="grid-2">
-        <div class="card cell"><div class="muted small">Total Sales</div><div class="cell-amt">₹ <span id="r-sales">0</span></div></div>
-        <div class="card cell"><div class="muted small">Total Collection</div><div class="cell-amt">₹ <span id="r-collection">0</span></div></div>
-        <div class="card cell"><div class="muted small">Total Advance</div><div class="cell-amt">₹ <span id="r-expenses">0</span></div></div>
-        <div class="card cell"><div class="muted small">Total Due</div><div class="cell-amt">₹ <span id="r-due">0</span></div></div>
-      </div>
-    </div>
-    <div id="reports-entries-panel" class="hidden">
-      <input class="search" id="entries-search" placeholder="Search by invoice / customer">
-      <div class="seg" id="entries-filter">
-        <button class="seg-item active" data-filter="">All</button>
-        <button class="seg-item" data-filter="SALE">Sale</button>
-        <button class="seg-item" data-filter="EXPENSE">Advance</button>
-        <button class="seg-item" data-filter="PAYMENT">Due</button>
-      </div>
-      <div id="entries-list" class="list"></div>
-    </div>
-    <div id="reports-advance-panel" class="hidden">
-      <input class="search" id="advance-search" placeholder="Search…">
-      <div id="advance-list" class="list history-list"></div>
-    </div>
-    <div id="reports-due-panel" class="hidden">
-      <input class="search" id="due-search" placeholder="Search…">
-      <div id="due-list" class="list history-list"></div>
-    </div>
-    <div class="bottom-pad"></div>
-  </section>
-
-  <!-- ── MORE ──────────────────────────────────────────────────── -->
-  <section id="view-more" class="view hidden">
-    <div class="card profile-card" id="profile-card-btn" style="cursor:pointer">
-      <div class="avatar" id="biz-avatar">M</div>
-      <div>
-        <div><strong id="biz-name">MS Scaffolding</strong></div>
-        <div class="muted small" id="biz-gstin">Set up your GSTIN</div>
-        <div class="muted small" id="biz-phone"></div>
-      </div>
-    </div>
-    <div class="menu">
-      <button class="menu-item" data-action="profile">🏢 Business Profile <span class="chev">›</span></button>
-      <button class="menu-item" data-nav="catalog">📦 Item Catalog <span class="chev">›</span></button>
-      <button class="menu-item" data-nav="eway">🚛 E-Way Bills <span class="chev">›</span></button>
-      <button class="menu-item" data-nav="reports">📊 Reports <span class="chev">›</span></button>
-      <button class="menu-item" data-action="export">📤 Export Data (JSON) <span class="chev">›</span></button>
-      <button class="menu-item" data-action="import">📥 Import Data (JSON) <span class="chev">›</span></button>
-      <button class="menu-item" data-action="help">❓ Help & Support <span class="chev">›</span></button>
-    </div>
-    <button class="btn outline-danger" data-action="reset">↻ Reset All Data</button>
-    <input type="file" id="import-file" accept="application/json" hidden>
-    <div class="bottom-pad"></div>
-  </section>
-
-</main>
-
-<!-- FAB -->
-<button id="fab" class="fab">＋ New Invoice</button>
-
-<!-- ── BOTTOM NAV ──────────────────────────────────────────────── -->
-<nav class="bottom-nav" id="bottom-nav">
-  <button class="nav-btn active" data-nav="dashboard">
-    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-    <span>Home</span>
-  </button>
-  <button class="nav-btn" data-nav="invoices">
-    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19 2H5a2 2 0 00-2 2v18l4-2 4 2 4-2 4 2V4a2 2 0 00-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V6h10v2z"/></svg>
-    <span>Invoices</span>
-  </button>
-  <button class="nav-btn" data-nav="customers">
-    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-    <span>Customers</span>
-  </button>
-  <button class="nav-btn" data-nav="add">
-    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 13h8v8h2v-8h8v-2h-8V3h-2v8H3z"/></svg>
-    <span>Entries</span>
-  </button>
-  <button class="nav-btn" data-nav="more">
-    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-    <span>More</span>
-  </button>
-</nav>
-
-<!-- ── ADD CUSTOMER MODAL ─────────────────────────────────────── -->
-<div id="customer-modal" class="modal hidden">
-  <div class="modal-card">
-    <h3>New Customer</h3>
-    <label class="field"><span>Name *</span><input id="cust-name" autocomplete="off"></label>
-    <label class="field"><span>Phone</span><input id="cust-phone" inputmode="numeric"></label>
-    <label class="field"><span>Address</span><input id="cust-address" autocomplete="off"></label>
-    <label class="field"><span>GSTIN (optional)</span><input id="cust-gstin" placeholder="15-digit GSTIN" maxlength="15" style="text-transform:uppercase"></label>
-    <div class="row gap end">
-      <button class="btn ghost" id="cust-cancel">Cancel</button>
-      <button class="btn primary" id="cust-save">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── DATE PICKER MODAL ──────────────────────────────────────── -->
-<div id="date-modal" class="modal hidden">
-  <div class="modal-card date-card">
-    <div class="row spread date-head-row">
-      <button class="iconbtn dark" id="date-prev">‹</button>
-      <strong id="date-title"></strong>
-      <button class="iconbtn dark" id="date-next">›</button>
-    </div>
-    <div class="date-weekdays">
-      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-    </div>
-    <div id="date-days" class="date-days"></div>
-    <div class="row gap end">
-      <button class="btn ghost" id="date-cancel">Cancel</button>
-      <button class="btn primary" id="date-today">Today</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── PRODUCT PAGE ───────────────────────────────────────────── -->
-<div id="item-modal" class="product-page hidden">
-  <div class="product-page-card">
-    <div class="product-page-head">
-      <button class="iconbtn" id="item-cancel" aria-label="Back">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg>
-      </button>
-      <h3>Select Product</h3>
-      <button class="page-save" id="item-save">Save</button>
-    </div>
-    <div class="product-page-body">
-      <div class="field"><span>Product Name</span><div id="product-options" class="product-options"></div></div>
-      <div class="add-product-row">
-        <input id="new-product-name" placeholder="SEARCH / ADD PRODUCT" autocomplete="off">
-        <button class="btn primary" id="add-product-btn">Add</button>
-      </div>
-      <label class="field compact-field"><span>Total Amount</span><input id="f-item-total" readonly></label>
-      <div class="item-lines-title">Qty  Rate  Amount</div>
-      <div id="item-lines-list" class="item-lines-list"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── SALE STATUS MODAL ──────────────────────────────────────── -->
-<div id="sale-status-modal" class="modal hidden">
-  <div class="modal-card action-card">
-    <h3>Payment Status</h3>
-    <p class="muted">Save this sale as paid or due payment.</p>
-    <div class="status-actions">
-      <button class="btn danger-soft" id="sale-due">Due Payment</button>
-      <button class="btn primary" id="sale-paid">Paid Payment</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── DUE PICKER MODAL ───────────────────────────────────────── -->
-<div id="due-picker-modal" class="modal hidden">
-  <div class="modal-card due-picker-card">
-    <div class="row spread due-picker-head">
-      <h3>Select Due Entry</h3>
-      <button class="iconbtn dark" id="due-picker-close">×</button>
-    </div>
-    <input class="search" id="due-picker-search" placeholder="Search name or mobile">
-    <div id="due-picker-list" class="due-picker-list"></div>
-  </div>
-</div>
-
-<!-- ── INVOICE FULL PAGE ──────────────────────────────────────── -->
-<div id="invoice-page" class="product-page hidden">
-  <div class="product-page-card">
-    <div class="product-page-head">
-      <button class="iconbtn" id="inv-cancel" aria-label="Back">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg>
-      </button>
-      <h3 id="inv-page-title">New Invoice</h3>
-      <button class="page-save" id="inv-save">Save</button>
-    </div>
-    <div class="product-page-body" id="invoice-form-body">
-
-      <div class="form-section-label">Invoice Details</div>
-      <div class="field-row">
-        <label class="field flex1"><span>Type</span>
-          <select id="inv-type">
-            <option value="SALE">Sale</option>
-            <option value="PURCHASE">Purchase</option>
-            <option value="HIRE_OUT">Hire Out (Rental)</option>
-            <option value="HIRE_IN">Hire In</option>
-          </select>
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <h2 id="view-title">AI-Powered Dashboard</h2>
+          <p id="view-subtitle">Smart overview of your bill book business</p>
+        </div>
+        <label class="search-box" for="global-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="global-search" placeholder="Search bills, parties, invoices..." autocomplete="off">
         </label>
-        <label class="field flex1"><span>Invoice No.</span>
-          <input id="inv-no" autocomplete="off">
-        </label>
+      </header>
+
+      <section class="view-panel" id="view-dashboard">
+        <section class="hero-card">
+          <div class="hero-inner">
+            <div class="hero-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+            </div>
+            <div>
+              <h3>AI Business Insight</h3>
+              <p>
+                Your sales bill book may finish in
+                <strong id="days-left">5 days</strong>. Create a new series now to avoid billing interruption.
+              </p>
+              <button class="accent-action" id="create-book">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                Create New Bill Book
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Business statistics">
+          <article class="stat-card searchable-item" data-search="total bill books">
+            <div class="stat-head">
+              <p>Total Bill Books</p>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+            </div>
+            <h3 id="stat-books">128</h3>
+            <span class="growth">+12.5% vs last month</span>
+          </article>
+          <article class="stat-card searchable-item" data-search="active series">
+            <div class="stat-head">
+              <p>Active Series</p>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m23 6-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+            </div>
+            <h3 id="stat-series">86</h3>
+            <span class="growth">+9.3% vs last month</span>
+          </article>
+          <article class="stat-card searchable-item" data-search="total parties">
+            <div class="stat-head">
+              <p>Total Parties</p>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+            </div>
+            <h3 id="stat-parties">532</h3>
+            <span class="growth">+15.8% vs last month</span>
+          </article>
+          <article class="stat-card searchable-item" data-search="invoices">
+            <div class="stat-head">
+              <p>Invoices</p>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+            </div>
+            <h3 id="stat-invoices">24,560</h3>
+            <span class="growth">+18.7% vs last month</span>
+          </article>
+        </section>
+
+        <div class="dashboard-grid">
+          <section class="panel usage-panel">
+            <div class="panel-head">
+              <h3>Bill Book Usage</h3>
+              <span>FY 2025-26</span>
+            </div>
+            <div class="bar-chart" id="usage-chart" aria-label="Monthly bill book usage chart"></div>
+            <div class="chart-labels">
+              <span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Dec</span>
+            </div>
+          </section>
+
+          <section class="panel insights-panel">
+            <div class="panel-head">
+              <h3>AI Insights</h3>
+            </div>
+            <div class="insight-list" id="insight-list"></div>
+          </section>
+        </div>
+
+        <section class="panel recent-panel">
+          <div class="panel-head">
+            <h3>Recent Activity</h3>
+            <span id="activity-count">Today</span>
+          </div>
+          <div class="activity-list" id="activity-list"></div>
+        </section>
+      </section>
+
+      <section class="view-panel hidden" id="view-bill-books">
+        <div class="section-toolbar">
+          <div>
+            <h3>Bill Book Series</h3>
+            <p>Track book stock, usage, and series health.</p>
+          </div>
+          <button class="accent-action compact" id="create-book-secondary">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            New Series
+          </button>
+        </div>
+        <div class="book-grid" id="billbook-list"></div>
+      </section>
+
+      <section class="view-panel hidden" id="view-parties">
+        <div class="section-toolbar">
+          <div>
+            <h3>Parties</h3>
+            <p>Customers and suppliers from your bill book.</p>
+          </div>
+        </div>
+        <div class="data-list" id="party-list"></div>
+      </section>
+
+      <section class="view-panel hidden" id="view-invoices">
+        <div class="section-toolbar">
+          <div>
+            <h3>Invoices</h3>
+            <p>Latest billing activity and payments.</p>
+          </div>
+          <button class="primary-action compact" id="new-invoice">Create Invoice</button>
+        </div>
+        <div class="data-list" id="invoice-list"></div>
+      </section>
+
+      <section class="view-panel hidden" id="view-settings">
+        <div class="settings-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Business Profile</h3>
+            </div>
+            <div class="profile-block">
+              <div class="profile-avatar" id="profile-avatar">B</div>
+              <div>
+                <h4 id="business-name">BillX Neo</h4>
+                <p id="business-phone">AI Bill Book System</p>
+              </div>
+            </div>
+            <div class="settings-row">
+              <span>Auto AI alerts</span>
+              <strong>Enabled</strong>
+            </div>
+            <div class="settings-row">
+              <span>Theme</span>
+              <strong>Neo Dark</strong>
+            </div>
+            <div class="settings-row">
+              <span>Data storage</span>
+              <strong>Local device</strong>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Quick Actions</h3>
+            </div>
+            <button class="wide-action" data-open-ai>Open AI Assistant</button>
+            <button class="wide-action" id="export-data">Export Local Data</button>
+            <button class="wide-action subtle" id="clear-search">Clear Search</button>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-title">
+    <div class="modal-card">
+      <button class="modal-close" id="ai-close" aria-label="Close AI assistant">×</button>
+      <div class="hero-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
       </div>
-      <div class="field-row">
-        <label class="field flex1"><span>Invoice Date</span>
-          <input id="inv-date" readonly style="cursor:pointer">
-        </label>
-        <label class="field flex1" id="hire-start-wrap" style="display:none"><span>Hire From</span>
-          <input id="inv-hire-start" readonly style="cursor:pointer">
-        </label>
-      </div>
-      <label class="field" id="hire-end-wrap" style="display:none"><span>Hire To / Return Date</span>
-        <input id="inv-hire-end" readonly style="cursor:pointer">
+      <h3 id="ai-title">AI Assistant</h3>
+      <p>Ask about bill books, parties, invoices, payments, and stock alerts.</p>
+      <label class="ai-input">
+        <span>Your question</span>
+        <textarea id="ai-question" placeholder="Example: Which bill book needs attention today?"></textarea>
       </label>
-
-      <div class="form-section-label">Customer / Party</div>
-      <label class="field"><span>Party Type</span>
-        <select id="inv-party-type">
-          <option value="GSTIN_REG">GST Registered</option>
-          <option value="UNREGISTERED">Unregistered Dealer</option>
-          <option value="CONSUMER">End Consumer</option>
-        </select>
-      </label>
-      <label class="field"><span>Name *</span>
-        <input id="inv-cust-name" list="inv-cust-list" autocomplete="off" placeholder="Type to search customers">
-        <datalist id="inv-cust-list"></datalist>
-      </label>
-      <label class="field"><span>Address</span>
-        <input id="inv-cust-addr" autocomplete="off">
-      </label>
-      <label class="field" id="inv-gstin-wrap"><span>GSTIN</span>
-        <input id="inv-cust-gstin" placeholder="15-digit GSTIN" maxlength="15" style="text-transform:uppercase" autocomplete="off">
-      </label>
-      <label class="field"><span>State</span>
-        <select id="inv-cust-state">
-          <option value="">Select State</option>
-        </select>
-      </label>
-      <div id="inv-tax-banner" class="tax-banner hidden"></div>
-
-      <div class="form-section-label">Items</div>
-      <div id="inv-items-container"></div>
-      <button class="btn ghost small" id="inv-add-item-btn">＋ Add Item</button>
-
-      <div class="form-section-label">Tax Summary</div>
-      <div class="tax-summary-box" id="inv-tax-summary">
-        <div class="tax-row"><span>Taxable Amount</span><span id="ts-taxable">₹ 0.00</span></div>
-        <div class="tax-row" id="ts-cgst-row"><span id="ts-cgst-label">CGST (9%)</span><span id="ts-cgst">₹ 0.00</span></div>
-        <div class="tax-row" id="ts-sgst-row"><span id="ts-sgst-label">SGST (9%)</span><span id="ts-sgst">₹ 0.00</span></div>
-        <div class="tax-row" id="ts-igst-row" style="display:none"><span id="ts-igst-label">IGST (18%)</span><span id="ts-igst">₹ 0.00</span></div>
-        <div class="tax-row" id="ts-roundoff-row" style="display:none"><span>Round Off</span><span id="ts-roundoff">₹ 0.00</span></div>
-        <div class="tax-row total-row-tax"><strong>TOTAL</strong><strong id="ts-total">₹ 0.00</strong></div>
-      </div>
-
-      <div class="form-section-label">Payment</div>
-      <label class="field"><span>Payment Method</span>
-        <select id="inv-payment">
-          <option value="CASH">Cash</option>
-          <option value="UPI">UPI</option>
-          <option value="CHEQUE">Cheque</option>
-          <option value="NEFT">NEFT / Bank Transfer</option>
-          <option value="OTHER">Other</option>
-        </select>
-      </label>
-      <label class="field check-field">
-        <input type="checkbox" id="inv-paid"> <span>Mark as Paid</span>
-      </label>
-      <label class="field"><span>Notes (optional)</span>
-        <input id="inv-notes" autocomplete="off">
-      </label>
-
-      <div class="bottom-pad"></div>
+      <button class="accent-action" id="ask-ai">Ask AI</button>
+      <div class="ai-answer" id="ai-answer">AI is ready with business insights.</div>
     </div>
   </div>
-</div>
 
-<!-- ── E-WAY BILL FULL PAGE ───────────────────────────────────── -->
-<div id="eway-page" class="product-page hidden">
-  <div class="product-page-card">
-    <div class="product-page-head">
-      <button class="iconbtn" id="ewb-cancel" aria-label="Back">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg>
-      </button>
-      <h3>E-Way Bill</h3>
-      <button class="page-save" id="ewb-save">Save</button>
-    </div>
-    <div class="product-page-body">
-      <div class="ewb-number-box" id="ewb-number-box">
-        <div class="ewb-no-label">E-Way Bill No. (from portal)</div>
-        <input id="ewb-no" placeholder="Enter 12-digit EWB number" inputmode="numeric" maxlength="12">
-        <p class="muted small" style="margin:4px 0 0">Generate on ewaybillgst.gov.in then enter the number here.</p>
-      </div>
-
-      <div class="form-section-label">Invoice / Document</div>
-      <div class="field-row">
-        <label class="field flex1"><span>Doc. No.</span><input id="ewb-inv-no" autocomplete="off"></label>
-        <label class="field flex1"><span>Doc. Date</span><input id="ewb-inv-date" readonly style="cursor:pointer"></label>
-      </div>
-      <label class="field"><span>Invoice Value (₹)</span>
-        <input id="ewb-inv-value" type="number" inputmode="decimal" min="0">
-      </label>
-
-      <div class="form-section-label">From (Supplier)</div>
-      <label class="field"><span>GSTIN</span><input id="ewb-sup-gstin" style="text-transform:uppercase"></label>
-      <label class="field"><span>Name</span><input id="ewb-sup-name" autocomplete="off"></label>
-      <label class="field"><span>Address</span><input id="ewb-sup-addr" autocomplete="off"></label>
-      <label class="field"><span>State</span>
-        <select id="ewb-sup-state"><option value="">Select State</option></select>
-      </label>
-
-      <div class="form-section-label">To (Recipient)</div>
-      <label class="field"><span>Recipient Type</span>
-        <select id="ewb-rec-type">
-          <option value="GSTIN_REG">GST Registered</option>
-          <option value="UNREGISTERED">Unregistered</option>
-          <option value="CONSUMER">Consumer</option>
-        </select>
-      </label>
-      <label class="field" id="ewb-rec-gstin-wrap"><span>GSTIN</span>
-        <input id="ewb-rec-gstin" style="text-transform:uppercase">
-      </label>
-      <label class="field"><span>Name</span><input id="ewb-rec-name" autocomplete="off"></label>
-      <label class="field"><span>Address</span><input id="ewb-rec-addr" autocomplete="off"></label>
-      <label class="field"><span>State</span>
-        <select id="ewb-rec-state"><option value="">Select State</option></select>
-      </label>
-
-      <div class="form-section-label">Goods</div>
-      <label class="field"><span>Description</span><input id="ewb-goods-desc" value="MS Scaffolding Material" autocomplete="off"></label>
-      <div class="field-row">
-        <label class="field flex1"><span>HSN Code</span><input id="ewb-hsn" value="73089090" autocomplete="off"></label>
-        <label class="field flex1"><span>Qty</span><input id="ewb-qty" type="number" inputmode="decimal" min="0"></label>
-        <label class="field flex1"><span>Unit</span><input id="ewb-unit" value="Nos" autocomplete="off"></label>
-      </div>
-      <label class="field"><span>Taxable Value (₹)</span><input id="ewb-taxable" type="number" inputmode="decimal" min="0"></label>
-      <div class="field-row">
-        <label class="field flex1"><span>CGST (₹)</span><input id="ewb-cgst" type="number" inputmode="decimal" min="0" value="0"></label>
-        <label class="field flex1"><span>SGST (₹)</span><input id="ewb-sgst" type="number" inputmode="decimal" min="0" value="0"></label>
-        <label class="field flex1"><span>IGST (₹)</span><input id="ewb-igst" type="number" inputmode="decimal" min="0" value="0"></label>
-      </div>
-
-      <div class="form-section-label">Transport (Part B)</div>
-      <div class="field-row">
-        <label class="field flex1"><span>Mode</span>
-          <select id="ewb-transport-mode">
-            <option value="ROAD">Road</option>
-            <option value="RAIL">Rail</option>
-            <option value="AIR">Air</option>
-            <option value="SHIP">Ship</option>
-          </select>
-        </label>
-        <label class="field flex1"><span>Vehicle No.</span><input id="ewb-vehicle" style="text-transform:uppercase" autocomplete="off"></label>
-      </div>
-      <div class="field-row">
-        <label class="field flex1"><span>Distance (KM)</span><input id="ewb-distance" type="number" inputmode="numeric" min="0"></label>
-        <label class="field flex1" id="ewb-validity-field"><span>Valid for</span><input id="ewb-validity" readonly></label>
-      </div>
-      <label class="field"><span>Transporter Name</span><input id="ewb-trans-name" autocomplete="off"></label>
-      <label class="field"><span>Transporter GSTIN</span><input id="ewb-trans-gstin" style="text-transform:uppercase"></label>
-      <label class="field"><span>Transport Doc. No. (LR/RR)</span><input id="ewb-trans-doc" autocomplete="off"></label>
-
-      <div class="bottom-pad"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── BUSINESS PROFILE MODAL ─────────────────────────────────── -->
-<div id="profile-modal" class="modal hidden">
-  <div class="modal-card profile-modal-card">
-    <h3>Business Profile</h3>
-    <label class="field"><span>Company Name *</span><input id="p-company" autocomplete="off"></label>
-    <label class="field"><span>Phone</span><input id="p-phone" inputmode="numeric"></label>
-    <label class="field"><span>Address</span><input id="p-address" autocomplete="off"></label>
-    <label class="field"><span>GSTIN</span><input id="p-gstin" placeholder="15-digit GSTIN" maxlength="15" style="text-transform:uppercase"></label>
-    <label class="field"><span>State</span>
-      <select id="p-state"><option value="">Select State</option></select>
-    </label>
-    <label class="field"><span>PAN No.</span><input id="p-pan" style="text-transform:uppercase"></label>
-    <div class="form-section-label" style="margin-top:12px">Bank Details</div>
-    <label class="field"><span>Bank Name</span><input id="p-bank" autocomplete="off"></label>
-    <label class="field"><span>Account No.</span><input id="p-account" inputmode="numeric"></label>
-    <label class="field"><span>IFSC Code</span><input id="p-ifsc" style="text-transform:uppercase"></label>
-    <label class="field"><span>Branch</span><input id="p-branch" autocomplete="off"></label>
-    <div class="form-section-label" style="margin-top:12px">Invoice Settings</div>
-    <label class="field"><span>Invoice Prefix (e.g. SCF)</span><input id="p-prefix" style="text-transform:uppercase" placeholder="INV"></label>
-    <div class="row gap end" style="margin-top:16px">
-      <button class="btn ghost" id="p-cancel">Cancel</button>
-      <button class="btn primary" id="p-save">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── ADD CATALOG ITEM MODAL ─────────────────────────────────── -->
-<div id="catalog-modal" class="modal hidden">
-  <div class="modal-card">
-    <h3 id="cat-modal-title">Add Item</h3>
-    <label class="field"><span>Name *</span><input id="cat-name" autocomplete="off"></label>
-    <label class="field"><span>HSN / SAC Code</span><input id="cat-hsn" autocomplete="off"></label>
-    <div class="field-row">
-      <label class="field flex1"><span>Unit</span>
-        <select id="cat-unit">
-          <option>Nos</option><option>MT</option><option>KG</option>
-          <option>Set</option><option>RM</option><option>Sqm</option>
-          <option>Day</option><option>Month</option><option>Sqft</option>
-        </select>
-      </label>
-      <label class="field flex1"><span>GST %</span>
-        <select id="cat-gst">
-          <option value="0">0%</option><option value="5">5%</option>
-          <option value="12">12%</option><option value="18" selected>18%</option>
-          <option value="28">28%</option>
-        </select>
-      </label>
-    </div>
-    <label class="field"><span>Default Rate (₹)</span><input id="cat-rate" type="number" inputmode="decimal" min="0" value="0"></label>
-    <div class="row gap end">
-      <button class="btn ghost" id="cat-cancel">Cancel</button>
-      <button class="btn primary" id="cat-save">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── INVOICE PRINT AREA ─────────────────────────────────────── -->
-<div id="print-area" style="display:none"></div>
-
-<div id="toast" class="toast hidden"></div>
-<script src="app.js?v=20"></script>
+  <div class="toast hidden" id="toast"></div>
+  <script src="app.js?v=30"></script>
 </body>
 </html>
