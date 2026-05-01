@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=35">
+  <link rel="stylesheet" href="styles.css?v=37">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -103,7 +103,7 @@
           </div>
         </section>
 
-        <section class="stats-grid" aria-label="Business statistics">
+        <section class="stock-row" aria-label="Stock statistics">
           <article class="stat-card stock-card searchable-item" data-search="stock kg material inventory">
             <div class="stat-head">
               <p>Stock</p>
@@ -116,51 +116,14 @@
             <div class="stock-chart" id="stock-chart" aria-label="Stock by material in kilograms"></div>
             <div class="stock-legend" id="stock-legend"></div>
           </article>
-          <article class="stat-card searchable-item" data-search="active series">
-            <div class="stat-head">
-              <p>Active Series</p>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m23 6-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
-            </div>
-            <h3 id="stat-series">86</h3>
-            <span class="growth">+9.3% vs last month</span>
-          </article>
-          <article class="stat-card searchable-item" data-search="total parties">
-            <div class="stat-head">
-              <p>Total Parties</p>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
-            </div>
-            <h3 id="stat-parties">532</h3>
-            <span class="growth">+15.8% vs last month</span>
-          </article>
-          <article class="stat-card searchable-item" data-search="invoices">
-            <div class="stat-head">
-              <p>Invoices</p>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
-            </div>
-            <h3 id="stat-invoices">24,560</h3>
-            <span class="growth">+18.7% vs last month</span>
-          </article>
         </section>
 
-        <div class="dashboard-grid">
-          <section class="panel usage-panel">
-            <div class="panel-head">
-              <h3>Bill Book Usage</h3>
-              <span>FY 2025-26</span>
-            </div>
-            <div class="bar-chart" id="usage-chart" aria-label="Monthly bill book usage chart"></div>
-            <div class="chart-labels">
-              <span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Dec</span>
-            </div>
-          </section>
-
-          <section class="panel insights-panel">
-            <div class="panel-head">
-              <h3>AI Insights</h3>
-            </div>
-            <div class="insight-list" id="insight-list"></div>
-          </section>
-        </div>
+        <section class="panel insights-panel">
+          <div class="panel-head">
+            <h3>AI Insights</h3>
+          </div>
+          <div class="insight-list" id="insight-list"></div>
+        </section>
 
         <section class="panel recent-panel">
           <div class="panel-head">
@@ -264,6 +227,6 @@
   </div>
 
   <div class="toast hidden" id="toast"></div>
-  <script src="app.js?v=35"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>

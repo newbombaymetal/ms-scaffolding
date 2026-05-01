@@ -323,6 +323,7 @@ function shortStockName(name) {
 
 function renderUsageChart() {
   const chart = document.getElementById('usage-chart');
+  if (!chart) return;
   const monthlyValues = monthlyInvoiceValues();
   const values = monthlyValues.some(Boolean)
     ? monthlyValues.map(value => Math.max(24, Math.round(value)))
