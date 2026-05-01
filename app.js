@@ -282,10 +282,13 @@ function showView(name, push = true) {
   fab.classList.toggle('hidden', !(name === 'dashboard' || (name === 'reports' && reportMode === 'entries')));
 
   // Back vs menu
-  const isMain = ['dashboard','customers','reports','more'].includes(name);
-  document.getElementById('menu-btn').hidden = !isMain;
-  document.getElementById('back-btn').hidden = isMain;
-  document.getElementById('bell-btn').hidden = !isMain;
+  const isMain = ['dashboard','customers','reports','more','invoices','eway','catalog','add'].includes(name);
+  const menuBtn = document.getElementById('menu-btn');
+  if (menuBtn) menuBtn.hidden = !isMain;
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) backBtn.hidden = isMain;
+  const bellBtn = document.getElementById('bell-btn');
+  if (bellBtn) bellBtn.hidden = !isMain;
 
   if (push && navStack[navStack.length - 1] !== name) navStack.push(name);
 
@@ -1455,7 +1458,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Back / Menu
-  document.getElementById('back-btn').addEventListener('click', goBack);
+  const _backBtn = document.getElementById('back-btn');
+  if (_backBtn) _backBtn.addEventListener('click', goBack);
   document.getElementById('menu-btn').addEventListener('click', () => showView('more'));
   document.getElementById('bell-btn').addEventListener('click', () => toast('No new notifications'));
 
