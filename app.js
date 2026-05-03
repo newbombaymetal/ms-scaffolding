@@ -1,13 +1,14 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '42';
+const APP_VERSION = '43';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const FRESHNESS_SNAPSHOT_KEY = `nbm_freshness_snapshot_${APP_VERSION}`;
 const UPDATE_CHECK_INTERVAL = 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
+const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || '';
 const FRESHNESS_FILES = [
   './index.html',
-  './styles.css?v=42',
-  './app.js?v=42',
+  './styles.css?v=43',
+  './app.js?v=43',
   './manifest.json',
   './sw.js'
 ];
@@ -224,6 +225,10 @@ function loadState() {
   }
 }
 
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
 function wireEvents() {
   document.querySelectorAll('[data-view]').forEach(button => {
     button.addEventListener('click', () => showView(button.dataset.view));
@@ -239,6 +244,13 @@ function wireEvents() {
   if (createBook) createBook.addEventListener('click', () => toast('New bill book flow ready'));
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
   document.getElementById('new-invoice').addEventListener('click', () => toast('Invoice creator can be wired next'));
+  document.getElementById('add-party').addEventListener('click', openPartyForm);
+  document.getElementById('party-close').addEventListener('click', closePartyForm);
+  document.getElementById('party-cancel').addEventListener('click', closePartyForm);
+  document.getElementById('party-form').addEventListener('submit', savePartyFromForm);
+  document.getElementById('party-gst').addEventListener('input', handleGstInput);
+  document.getElementById('party-gst').addEventListener('blur', maybeFetchGstDetails);
+  document.getElementById('fetch-gst').addEventListener('click', fetchGstDetails);
   document.getElementById('clear-search').addEventListener('click', () => {
     document.getElementById('global-search').value = '';
     applySearch();
@@ -551,9 +563,14 @@ function renderParties() {
     ? state.customers.slice(0, 24).map(customer => ({
         name: customer.name || 'Unnamed Party',
         phone: customer.phone || 'No phone',
+        type: customer.type || customer.partyType || 'Customer',
+        gstin: customer.gstin || customer.gst || '',
+        pan: customer.pan || '',
+        address: customer.address || '',
+        shippingAddress: customer.shippingAddress || '',
         amount: totalForCustomer(customer.name)
       }))
-    : fallbackParties;
+    : fallbackParties.map(party => ({ ...party, type: 'Customer', gstin: '', pan: '', address: '', shippingAddress: '' }));
 
   if (!parties.length) {
     list.innerHTML = '<div class="empty-state">No parties found.</div>';
@@ -561,12 +578,15 @@ function renderParties() {
   }
 
   list.innerHTML = parties.map(party => `
-    <article class="data-row searchable-item" data-search="${escapeAttr(`${party.name} ${party.phone}`)}">
+    <article class="data-row searchable-item" data-search="${escapeAttr(`${party.name} ${party.phone} ${party.type} ${party.gstin} ${party.pan} ${party.address} ${party.shippingAddress}`)}">
       <div class="data-main">
         <div class="data-icon">${escapeHtml(initials(party.name))}</div>
         <div>
-          <h4>${escapeHtml(party.name)}</h4>
-          <p>${escapeHtml(party.phone)}</p>
+          <div class="party-title-line">
+            <h4>${escapeHtml(party.name)}</h4>
+            <span class="status-pill">${escapeHtml(party.type)}</span>
+          </div>
+          <p class="party-details">${escapeHtml(compactPartyDetails(party))}</p>
         </div>
       </div>
       <strong class="data-amount">₹ ${formatMoney(party.amount)}</strong>
@@ -599,6 +619,187 @@ function renderProfile() {
   setText('business-name', businessName);
   setText('business-phone', phone);
   setText('profile-avatar', initials(businessName).slice(0, 1) || 'B');
+}
+
+function compactPartyDetails(party) {
+  return [
+    party.phone,
+    party.gstin ? `GST ${party.gstin}` : '',
+    party.pan ? `PAN ${party.pan}` : '',
+    party.address
+  ].filter(Boolean).join(' · ') || 'Party details saved locally';
+}
+
+function openPartyForm() {
+  resetPartyForm();
+  document.getElementById('party-modal').classList.remove('hidden');
+  document.getElementById('party-name').focus();
+}
+
+function closePartyForm() {
+  document.getElementById('party-modal').classList.add('hidden');
+}
+
+function resetPartyForm() {
+  document.getElementById('party-form').reset();
+  document.getElementById('party-type').value = 'Customer';
+  setGstStatus('');
+}
+
+function savePartyFromForm(event) {
+  event.preventDefault();
+
+  const form = new FormData(event.currentTarget);
+  const gstin = normalizeGstin(form.get('gstin'));
+  const pan = normalizePan(form.get('pan')) || panFromGstin(gstin);
+  const name = String(form.get('name') || '').trim();
+
+  if (!name) {
+    document.getElementById('party-name').focus();
+    toast('Enter party name');
+    return;
+  }
+
+  if (gstin && !isValidGstin(gstin)) {
+    setGstStatus('Invalid GST number');
+    document.getElementById('party-gst').focus();
+    return;
+  }
+
+  const party = {
+    id: `party-${Date.now()}`,
+    name,
+    phone: String(form.get('phone') || '').trim(),
+    type: String(form.get('type') || 'Customer'),
+    gstin,
+    pan,
+    address: String(form.get('address') || '').trim(),
+    shippingAddress: String(form.get('shippingAddress') || '').trim(),
+    createdAt: Date.now()
+  };
+
+  state.customers = [party, ...state.customers.filter(customer =>
+    !(party.gstin && normalizeGstin(customer.gstin || customer.gst) === party.gstin)
+  )];
+  saveState();
+  renderParties();
+  renderStats();
+  applySearch();
+  closePartyForm();
+  toast('Party details saved');
+}
+
+function handleGstInput(event) {
+  const gstin = normalizeGstin(event.target.value);
+  event.target.value = gstin;
+
+  const pan = panFromGstin(gstin);
+  if (pan) document.getElementById('party-pan').value = pan;
+
+  if (!gstin) {
+    setGstStatus('');
+  } else if (gstin.length < 15) {
+    setGstStatus('Enter 15 character GST number');
+  } else if (!isValidGstin(gstin)) {
+    setGstStatus('Invalid GST number');
+  } else {
+    setGstStatus('PAN filled from GST number');
+  }
+}
+
+function maybeFetchGstDetails() {
+  if (GST_LOOKUP_ENDPOINT && isValidGstin(normalizeGstin(document.getElementById('party-gst').value))) {
+    fetchGstDetails();
+  }
+}
+
+async function fetchGstDetails() {
+  const gstin = normalizeGstin(document.getElementById('party-gst').value);
+  const pan = panFromGstin(gstin);
+  if (pan) document.getElementById('party-pan').value = pan;
+
+  if (!isValidGstin(gstin)) {
+    setGstStatus('Invalid GST number');
+    return;
+  }
+
+  if (!GST_LOOKUP_ENDPOINT) {
+    setGstStatus('PAN filled. GST portal fetch needs a lookup API connection.');
+    return;
+  }
+
+  setGstStatus('Fetching GST details...');
+  try {
+    const data = await requestGstDetails(gstin);
+    fillGstDetails(data, gstin);
+    setGstStatus('GST details filled');
+  } catch (error) {
+    setGstStatus('GST details could not be fetched');
+  }
+}
+
+async function requestGstDetails(gstin) {
+  const url = GST_LOOKUP_ENDPOINT.includes('{gstin}')
+    ? GST_LOOKUP_ENDPOINT.replace('{gstin}', encodeURIComponent(gstin))
+    : `${GST_LOOKUP_ENDPOINT}${GST_LOOKUP_ENDPOINT.includes('?') ? '&' : '?'}gstin=${encodeURIComponent(gstin)}`;
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error('GST lookup failed');
+  return response.json();
+}
+
+function fillGstDetails(data, gstin) {
+  const payload = data?.data || data?.result || data || {};
+  const name = payload.legalName || payload.lgnm || payload.tradeName || payload.tradeNam || payload.name || payload.businessName;
+  const pan = payload.pan || payload.panNo || panFromGstin(gstin);
+  const address = payload.address || payload.principalAddress || payload.pradr || payload.principalPlaceOfBusiness;
+
+  if (name) document.getElementById('party-name').value = String(name).trim();
+  if (pan) document.getElementById('party-pan').value = normalizePan(pan);
+
+  const formattedAddress = formatGstAddress(address);
+  if (formattedAddress) {
+    document.getElementById('party-address').value = formattedAddress;
+    if (!document.getElementById('party-shipping').value.trim()) {
+      document.getElementById('party-shipping').value = formattedAddress;
+    }
+  }
+}
+
+function formatGstAddress(address) {
+  if (!address) return '';
+  if (typeof address === 'string') return address.trim();
+  const source = address.addr || address.address || address;
+  return [
+    source.bno,
+    source.bnm,
+    source.flno,
+    source.st,
+    source.loc,
+    source.dst,
+    source.stcd,
+    source.pncd
+  ].filter(Boolean).join(', ');
+}
+
+function setGstStatus(message) {
+  setText('gst-status', message);
+}
+
+function normalizeGstin(value) {
+  return String(value || '').replace(/[^0-9a-z]/gi, '').toUpperCase().slice(0, 15);
+}
+
+function normalizePan(value) {
+  return String(value || '').replace(/[^0-9a-z]/gi, '').toUpperCase().slice(0, 10);
+}
+
+function isValidGstin(value) {
+  return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(normalizeGstin(value));
+}
+
+function panFromGstin(value) {
+  const gstin = normalizeGstin(value);
+  return gstin.length >= 12 ? gstin.slice(2, 12) : '';
 }
 
 function wireInstallPrompt() {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="42">
+  <meta name="app-version" content="43">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=42">
+  <link rel="stylesheet" href="styles.css?v=43">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -164,6 +164,10 @@
             <h3>Parties</h3>
             <p>Customers and suppliers from your bill book.</p>
           </div>
+          <button class="accent-action compact" id="add-party">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Add Party Details
+          </button>
         </div>
         <div class="data-list" id="party-list"></div>
       </section>
@@ -236,7 +240,55 @@
     </div>
   </div>
 
+  <div class="modal hidden" id="party-modal" role="dialog" aria-modal="true" aria-labelledby="party-title">
+    <form class="modal-card party-modal-card" id="party-form">
+      <button class="modal-close" id="party-close" type="button" aria-label="Close party form">×</button>
+      <h3 id="party-title">Add Party Details</h3>
+      <div class="party-form-grid">
+        <label class="form-field">
+          <span>Party Name</span>
+          <input id="party-name" name="name" autocomplete="organization" required>
+        </label>
+        <label class="form-field">
+          <span>Contact No.</span>
+          <input id="party-phone" name="phone" inputmode="tel" autocomplete="tel">
+        </label>
+        <label class="form-field">
+          <span>Party Type</span>
+          <select id="party-type" name="type" required>
+            <option value="Customer">Customer</option>
+            <option value="Supplier">Supplier</option>
+          </select>
+        </label>
+        <label class="form-field gst-field">
+          <span>GST Number</span>
+          <div class="field-with-action">
+            <input id="party-gst" name="gstin" maxlength="15" autocomplete="off">
+            <button class="field-action" id="fetch-gst" type="button">Fetch</button>
+          </div>
+        </label>
+        <label class="form-field">
+          <span>PAN No.</span>
+          <input id="party-pan" name="pan" maxlength="10" autocomplete="off">
+        </label>
+        <label class="form-field wide">
+          <span>Address</span>
+          <textarea id="party-address" name="address" rows="3"></textarea>
+        </label>
+        <label class="form-field wide">
+          <span>Shipping Address</span>
+          <textarea id="party-shipping" name="shippingAddress" rows="3"></textarea>
+        </label>
+      </div>
+      <div class="form-status" id="gst-status" aria-live="polite"></div>
+      <div class="form-actions">
+        <button class="wide-action subtle" id="party-cancel" type="button">Cancel</button>
+        <button class="accent-action compact" type="submit">Save Party</button>
+      </div>
+    </form>
+  </div>
+
   <div class="toast hidden" id="toast"></div>
-  <script src="app.js?v=42"></script>
+  <script src="app.js?v=43"></script>
 </body>
 </html>
