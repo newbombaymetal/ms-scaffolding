@@ -2,15 +2,44 @@
   "name": "New Bombay Metal",
   "short_name": "NBM",
   "description": "New Bombay Metal dashboard for payments, stock, parties, and invoices. Works offline.",
-  "start_url": "./index.html",
+  "id": "./",
+  "start_url": "./index.html?view=dashboard",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "browser"],
   "orientation": "portrait",
   "background_color": "#070B16",
   "theme_color": "#070B16",
+  "categories": ["business", "productivity", "finance"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "./index.html?view=dashboard",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Bill Books",
+      "short_name": "Bill Books",
+      "url": "./index.html?view=bill-books",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Parties",
+      "short_name": "Parties",
+      "url": "./index.html?view=parties",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Invoices",
+      "short_name": "Invoices",
+      "url": "./index.html?view=invoices",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

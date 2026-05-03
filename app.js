@@ -53,11 +53,14 @@ const titles = {
 
 let state = { transactions: [], customers: [], business: {} };
 let currentView = 'dashboard';
+let deferredInstallPrompt = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
   renderAll();
   wireEvents();
+  wireInstallPrompt();
+  showInitialView();
 
   registerServiceWorker();
 });
@@ -114,6 +117,12 @@ function wireEvents() {
   document.getElementById('export-data').addEventListener('click', exportData);
 }
 
+function showInitialView() {
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get('view');
+  showView(titles[view] ? view : currentView);
+}
+
 function showView(name) {
   currentView = name;
   const [title, subtitle] = titles[name] || titles.dashboard;
@@ -129,6 +138,19 @@ function showView(name) {
 
   closeDrawer();
   applySearch();
+  updateViewUrl(name);
+}
+
+function updateViewUrl(name) {
+  if (!window.history?.replaceState) return;
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('view') === name) return;
+    url.searchParams.set('view', name);
+    window.history.replaceState(null, '', url);
+  } catch (error) {
+    // file:// previews can reject URL updates in some browsers.
+  }
 }
 
 function renderAll() {
@@ -450,6 +472,51 @@ function renderProfile() {
   setText('profile-avatar', initials(businessName).slice(0, 1) || 'B');
 }
 
+function wireInstallPrompt() {
+  const installButton = document.getElementById('install-android');
+  if (!installButton || isStandaloneMode() || !isAndroidDevice()) return;
+
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    installButton.classList.remove('hidden');
+  });
+
+  installButton.addEventListener('click', installAndroidVersion);
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    installButton.classList.add('hidden');
+    toast('Android app installed');
+  });
+}
+
+async function installAndroidVersion() {
+  if (!deferredInstallPrompt) {
+    toast(isAndroidDevice() ? 'Android install is ready from Chrome menu' : 'Open on Android Chrome to install');
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice.catch(() => null);
+  deferredInstallPrompt = null;
+
+  if (choice?.outcome === 'accepted') {
+    document.getElementById('install-android')?.classList.add('hidden');
+    toast('Android app installed');
+  } else {
+    toast('Install dismissed');
+  }
+}
+
+function isStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent);
+}
+
 function applySearch() {
   const query = document.getElementById('global-search').value.trim().toLowerCase();
   const currentPanel = document.getElementById(`view-${currentView}`);
@@ -524,7 +591,7 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `billx-neo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.download = `nbm-backup-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
