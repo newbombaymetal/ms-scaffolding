@@ -1,8 +1,16 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '41';
+const APP_VERSION = '42';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
+const FRESHNESS_SNAPSHOT_KEY = `nbm_freshness_snapshot_${APP_VERSION}`;
 const UPDATE_CHECK_INTERVAL = 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
+const FRESHNESS_FILES = [
+  './index.html',
+  './styles.css?v=42',
+  './app.js?v=42',
+  './manifest.json',
+  './sw.js'
+];
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -127,15 +135,12 @@ function wireFreshnessChecks() {
 
 async function checkForFreshBuild() {
   try {
-    const response = await fetch(`./version.json?ts=${Date.now()}`, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
-    });
-    if (!response.ok) return;
-
-    const build = await response.json();
+    const [build, snapshotChanged] = await Promise.all([
+      fetchBuildVersion(),
+      hasFreshnessSnapshotChanged()
+    ]);
     const latestVersion = String(build.version || '').trim();
-    if (!latestVersion || latestVersion === APP_VERSION) return;
+    if ((!latestVersion || latestVersion === APP_VERSION) && !snapshotChanged) return;
 
     await serviceWorkerRegistration?.update?.();
     if (serviceWorkerRegistration?.waiting) {
@@ -143,10 +148,50 @@ async function checkForFreshBuild() {
       return;
     }
 
-    reloadForUpdate(latestVersion);
+    reloadForUpdate(latestVersion || APP_VERSION);
   } catch (error) {
     // Offline starts should keep using the cached app.
   }
+}
+
+async function fetchBuildVersion() {
+  const response = await fetch(`./version.json?ts=${Date.now()}`, {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' }
+  });
+  return response.ok ? response.json() : {};
+}
+
+async function hasFreshnessSnapshotChanged() {
+  const snapshot = await buildFreshnessSnapshot();
+  if (!snapshot) return false;
+
+  const previous = localStorage.getItem(FRESHNESS_SNAPSHOT_KEY);
+  localStorage.setItem(FRESHNESS_SNAPSHOT_KEY, snapshot);
+  return Boolean(previous && previous !== snapshot);
+}
+
+async function buildFreshnessSnapshot() {
+  const entries = await Promise.all(FRESHNESS_FILES.map(async file => {
+    const separator = file.includes('?') ? '&' : '?';
+    const response = await fetch(`${file}${separator}ts=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (!response.ok) return `${file}:missing`;
+    return `${file}:${signatureFor(await response.text())}`;
+  }));
+
+  return entries.join('|');
+}
+
+function signatureFor(value) {
+  let hash = 0;
+  const text = String(value || '');
+  for (let i = 0; i < text.length; i += 1) {
+    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+  }
+  return `${text.length}:${hash >>> 0}`;
 }
 
 function reloadForUpdate(version) {
