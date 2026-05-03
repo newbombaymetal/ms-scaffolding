@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '44';
+const APP_VERSION = '45';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const FRESHNESS_SNAPSHOT_KEY = `nbm_freshness_snapshot_${APP_VERSION}`;
 const UPDATE_CHECK_INTERVAL = 60 * 1000;
@@ -7,8 +7,8 @@ const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
 const FRESHNESS_FILES = [
   './index.html',
-  './styles.css?v=44',
-  './app.js?v=44',
+  './styles.css?v=45',
+  './app.js?v=45',
   './manifest.json',
   './sw.js'
 ];
@@ -642,7 +642,7 @@ function closePartyForm() {
 
 function resetPartyForm() {
   document.getElementById('party-form').reset();
-  document.getElementById('party-type').value = 'Customer';
+  document.getElementById('party-type-customer').checked = true;
   setGstStatus('');
 }
 

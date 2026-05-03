@@ -1,11 +1,11 @@
 /* NBM — service worker for offline cache. */
-const APP_VERSION = '44';
+const APP_VERSION = '45';
 const CACHE = `nbm-v${APP_VERSION}`;
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=44',
-  './app.js?v=44',
+  './styles.css?v=45',
+  './app.js?v=45',
   './manifest.json',
   './version.json',
   './icons/icon-180.png',

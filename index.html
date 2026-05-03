@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="44">
+  <meta name="app-version" content="45">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=44">
+  <link rel="stylesheet" href="styles.css?v=45">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -253,13 +253,19 @@
           <span>Contact No.</span>
           <input id="party-phone" name="phone" inputmode="tel" autocomplete="tel">
         </label>
-        <label class="form-field">
+        <div class="form-field party-type-field">
           <span>Party Type</span>
-          <select id="party-type" name="type" required>
-            <option value="Customer">Customer</option>
-            <option value="Supplier">Supplier</option>
-          </select>
-        </label>
+          <div class="party-type-cards" role="radiogroup" aria-label="Party Type">
+            <label class="party-type-card">
+              <input id="party-type-customer" type="radio" name="type" value="Customer" checked>
+              <b>Customer</b>
+            </label>
+            <label class="party-type-card">
+              <input id="party-type-supplier" type="radio" name="type" value="Supplier">
+              <b>Supplier</b>
+            </label>
+          </div>
+        </div>
         <label class="form-field gst-field">
           <span>GST Number</span>
           <div class="field-with-action">
@@ -289,6 +295,6 @@
   </div>
 
   <div class="toast hidden" id="toast"></div>
-  <script src="app.js?v=44"></script>
+  <script src="app.js?v=45"></script>
 </body>
 </html>
