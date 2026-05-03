@@ -1,14 +1,14 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '43';
+const APP_VERSION = '44';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const FRESHNESS_SNAPSHOT_KEY = `nbm_freshness_snapshot_${APP_VERSION}`;
 const UPDATE_CHECK_INTERVAL = 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
-const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || '';
+const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
 const FRESHNESS_FILES = [
   './index.html',
-  './styles.css?v=43',
-  './app.js?v=43',
+  './styles.css?v=44',
+  './app.js?v=44',
   './manifest.json',
   './sw.js'
 ];
@@ -703,12 +703,12 @@ function handleGstInput(event) {
   } else if (!isValidGstin(gstin)) {
     setGstStatus('Invalid GST number');
   } else {
-    setGstStatus('PAN filled from GST number');
+    setGstStatus('PAN filled. Tap Fetch for GST name and address.');
   }
 }
 
 function maybeFetchGstDetails() {
-  if (GST_LOOKUP_ENDPOINT && isValidGstin(normalizeGstin(document.getElementById('party-gst').value))) {
+  if (isValidGstin(normalizeGstin(document.getElementById('party-gst').value))) {
     fetchGstDetails();
   }
 }
@@ -723,18 +723,13 @@ async function fetchGstDetails() {
     return;
   }
 
-  if (!GST_LOOKUP_ENDPOINT) {
-    setGstStatus('PAN filled. GST portal fetch needs a lookup API connection.');
-    return;
-  }
-
   setGstStatus('Fetching GST details...');
   try {
     const data = await requestGstDetails(gstin);
     fillGstDetails(data, gstin);
     setGstStatus('GST details filled');
   } catch (error) {
-    setGstStatus('GST details could not be fetched');
+    setGstStatus(error.message || 'GST details could not be fetched');
   }
 }
 
@@ -744,12 +739,14 @@ async function requestGstDetails(gstin) {
     : `${GST_LOOKUP_ENDPOINT}${GST_LOOKUP_ENDPOINT.includes('?') ? '&' : '?'}gstin=${encodeURIComponent(gstin)}`;
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('GST lookup failed');
-  return response.json();
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) return response.json();
+  return parseGstLookupHtml(await response.text(), gstin);
 }
 
 function fillGstDetails(data, gstin) {
   const payload = data?.data || data?.result || data || {};
-  const name = payload.legalName || payload.lgnm || payload.tradeName || payload.tradeNam || payload.name || payload.businessName;
+  const name = payload.tradeName || payload.tradeNam || payload.name || payload.businessName || payload.legalName || payload.lgnm;
   const pan = payload.pan || payload.panNo || panFromGstin(gstin);
   const address = payload.address || payload.principalAddress || payload.pradr || payload.principalPlaceOfBusiness;
 
@@ -762,6 +759,35 @@ function fillGstDetails(data, gstin) {
     if (!document.getElementById('party-shipping').value.trim()) {
       document.getElementById('party-shipping').value = formattedAddress;
     }
+  }
+}
+
+function parseGstLookupHtml(html, gstin) {
+  const documentHtml = new DOMParser().parseFromString(html, 'text/html');
+  const organization = Array.from(documentHtml.querySelectorAll('script[type="application/ld+json"]'))
+    .map(script => parseJson(script.textContent))
+    .flatMap(item => Array.isArray(item) ? item : [item])
+    .find(item => item && (item['@type'] === 'Organization' || item.vatID === gstin));
+
+  if (organization?.legalName || organization?.name || organization?.address) {
+    return {
+      gstin,
+      legalName: organization.legalName,
+      tradeName: organization.name,
+      address: organization.address?.streetAddress || organization.address
+    };
+  }
+
+  const pageTitle = documentHtml.querySelector('title')?.textContent || '';
+  if (/not found|404/i.test(pageTitle)) throw new Error('GSTIN not found');
+  throw new Error('GST details not available');
+}
+
+function parseJson(value) {
+  try {
+    return JSON.parse(value || '{}');
+  } catch (error) {
+    return null;
   }
 }
 
