@@ -1,4 +1,8 @@
 const STORAGE_KEY = 'sm_app_v1';
+const APP_VERSION = '41';
+const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
+const UPDATE_CHECK_INTERVAL = 60 * 1000;
+const UPDATE_RETRY_DELAY = 30 * 1000;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -54,6 +58,7 @@ const titles = {
 let state = { transactions: [], customers: [], business: {} };
 let currentView = 'dashboard';
 let deferredInstallPrompt = null;
+let serviceWorkerRegistration = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
@@ -66,18 +71,97 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function registerServiceWorker() {
+  wireFreshnessChecks();
+
   if (!('serviceWorker' in navigator)) return;
 
   let refreshed = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshed) return;
     refreshed = true;
-    window.location.reload();
+    reloadForUpdate(APP_VERSION);
+  });
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'APP_UPDATED' && event.data.version !== APP_VERSION) {
+      reloadForUpdate(event.data.version);
+    }
   });
 
   navigator.serviceWorker.register('./sw.js')
-    .then(reg => reg.update())
+    .then(reg => {
+      serviceWorkerRegistration = reg;
+      reg.update();
+      watchServiceWorker(reg);
+    })
     .catch(() => {});
+}
+
+function watchServiceWorker(reg) {
+  if (!reg) return;
+  if (reg.waiting) activateWaitingWorker(reg.waiting);
+
+  reg.addEventListener('updatefound', () => {
+    const worker = reg.installing;
+    if (!worker) return;
+    worker.addEventListener('statechange', () => {
+      if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+        activateWaitingWorker(worker);
+      }
+    });
+  });
+}
+
+function activateWaitingWorker(worker) {
+  worker.postMessage({ type: 'SKIP_WAITING' });
+}
+
+function wireFreshnessChecks() {
+  checkForFreshBuild();
+  window.addEventListener('focus', checkForFreshBuild);
+  window.addEventListener('online', checkForFreshBuild);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkForFreshBuild();
+  });
+  window.setInterval(checkForFreshBuild, UPDATE_CHECK_INTERVAL);
+}
+
+async function checkForFreshBuild() {
+  try {
+    const response = await fetch(`./version.json?ts=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (!response.ok) return;
+
+    const build = await response.json();
+    const latestVersion = String(build.version || '').trim();
+    if (!latestVersion || latestVersion === APP_VERSION) return;
+
+    await serviceWorkerRegistration?.update?.();
+    if (serviceWorkerRegistration?.waiting) {
+      activateWaitingWorker(serviceWorkerRegistration.waiting);
+      return;
+    }
+
+    reloadForUpdate(latestVersion);
+  } catch (error) {
+    // Offline starts should keep using the cached app.
+  }
+}
+
+function reloadForUpdate(version) {
+  const nextVersion = String(version || APP_VERSION);
+  const [previousVersion, previousTime] = String(sessionStorage.getItem(UPDATE_RELOAD_KEY) || '').split(':');
+  if (previousVersion === nextVersion && Date.now() - Number(previousTime || 0) < UPDATE_RETRY_DELAY) return;
+  sessionStorage.setItem(UPDATE_RELOAD_KEY, `${nextVersion}:${Date.now()}`);
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('refresh', nextVersion);
+    window.location.replace(url);
+  } catch (error) {
+    window.location.reload();
+  }
 }
 
 function loadState() {

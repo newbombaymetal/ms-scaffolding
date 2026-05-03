@@ -1,11 +1,13 @@
 /* NBM — service worker for offline cache. */
-const CACHE = 'nbm-v40';
+const APP_VERSION = '41';
+const CACHE = `nbm-v${APP_VERSION}`;
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=40',
-  './app.js?v=40',
+  './styles.css?v=41',
+  './app.js?v=41',
   './manifest.json',
+  './version.json',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -21,9 +23,17 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() =>
+      self.clients.matchAll({ type: 'window' }).then(clients =>
+        clients.forEach(client => client.postMessage({ type: 'APP_UPDATED', version: APP_VERSION }))
+      )
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener('message', (e) => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', (e) => {
