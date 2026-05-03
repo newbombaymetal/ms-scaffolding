@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '45';
+const APP_VERSION = '46';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const FRESHNESS_SNAPSHOT_KEY = `nbm_freshness_snapshot_${APP_VERSION}`;
 const UPDATE_CHECK_INTERVAL = 60 * 1000;
@@ -7,11 +7,12 @@ const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
 const FRESHNESS_FILES = [
   './index.html',
-  './styles.css?v=45',
-  './app.js?v=45',
+  './styles.css?v=46',
+  './app.js?v=46',
   './manifest.json',
   './sw.js'
 ];
+let lockedPageScrollY = 0;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -632,12 +633,14 @@ function compactPartyDetails(party) {
 
 function openPartyForm() {
   resetPartyForm();
+  lockPageScroll();
   document.getElementById('party-modal').classList.remove('hidden');
-  document.getElementById('party-name').focus();
+  document.getElementById('party-name').focus({ preventScroll: true });
 }
 
 function closePartyForm() {
   document.getElementById('party-modal').classList.add('hidden');
+  unlockPageScroll();
 }
 
 function resetPartyForm() {
@@ -921,12 +924,31 @@ function closeDrawer() {
 }
 
 function openAi() {
+  lockPageScroll();
   document.getElementById('ai-modal').classList.remove('hidden');
-  document.getElementById('ai-question').focus();
+  document.getElementById('ai-question').focus({ preventScroll: true });
 }
 
 function closeAi() {
   document.getElementById('ai-modal').classList.add('hidden');
+  unlockPageScroll();
+}
+
+function lockPageScroll() {
+  if (document.body.classList.contains('modal-scroll-locked')) return;
+  lockedPageScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.documentElement.classList.add('modal-scroll-locked');
+  document.body.classList.add('modal-scroll-locked');
+  document.body.style.top = `-${lockedPageScrollY}px`;
+}
+
+function unlockPageScroll() {
+  if (!document.body.classList.contains('modal-scroll-locked')) return;
+  document.documentElement.classList.remove('modal-scroll-locked');
+  document.body.classList.remove('modal-scroll-locked');
+  document.body.style.top = '';
+  window.scrollTo(0, lockedPageScrollY);
+  lockedPageScrollY = 0;
 }
 
 function answerAi() {

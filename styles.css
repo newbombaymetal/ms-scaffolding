@@ -43,6 +43,18 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html.modal-scroll-locked,
+body.modal-scroll-locked {
+  overflow: hidden;
+}
+
+body.modal-scroll-locked {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
 button,
 input,
 textarea {
@@ -889,6 +901,8 @@ svg {
   justify-content: center;
   padding: 20px;
   background: rgba(0, 0, 0, 0.62);
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .modal-card {
@@ -902,6 +916,8 @@ svg {
   width: min(100%, 760px);
   max-height: min(760px, calc(100dvh - 40px));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-close {
