@@ -44,7 +44,7 @@ const sampleActivity = [
 ];
 
 const titles = {
-  dashboard: ['AI-Powered Dashboard', 'Smart overview of your bill book business'],
+  dashboard: ['NBM', 'New Bombay Metal'],
   'bill-books': ['Bill Books', 'Monitor series, stock, and billing continuity'],
   parties: ['Parties', 'Customers and suppliers in one clean view'],
   invoices: ['Invoices', 'Recent invoice and payment activity'],
@@ -443,8 +443,8 @@ function renderInvoices() {
 }
 
 function renderProfile() {
-  const businessName = state.business.name || 'BillX Neo';
-  const phone = state.business.phone || 'AI Bill Book System';
+  const businessName = state.business.name || 'NBM';
+  const phone = state.business.phone || 'New Bombay Metal';
   setText('business-name', businessName);
   setText('business-phone', phone);
   setText('profile-avatar', initials(businessName).slice(0, 1) || 'B');
@@ -517,7 +517,7 @@ function answerAi() {
 function exportData() {
   const payload = {
     exportedAt: new Date().toISOString(),
-    source: 'BillX Neo local dashboard',
+    source: 'NBM local dashboard',
     state
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });

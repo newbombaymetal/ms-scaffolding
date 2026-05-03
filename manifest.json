@@ -1,7 +1,7 @@
 {
-  "name": "BillX Neo",
-  "short_name": "BillX Neo",
-  "description": "AI bill book dashboard for bill books, parties, invoices, and insights. Works offline.",
+  "name": "New Bombay Metal",
+  "short_name": "NBM",
+  "description": "New Bombay Metal dashboard for payments, stock, parties, and invoices. Works offline.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
