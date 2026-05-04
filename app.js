@@ -1,17 +1,9 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '46';
+const APP_VERSION = '47';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
-const FRESHNESS_SNAPSHOT_KEY = `nbm_freshness_snapshot_${APP_VERSION}`;
-const UPDATE_CHECK_INTERVAL = 60 * 1000;
+const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
-const FRESHNESS_FILES = [
-  './index.html',
-  './styles.css?v=46',
-  './app.js?v=46',
-  './manifest.json',
-  './sw.js'
-];
 let lockedPageScrollY = 0;
 
 const sampleBillBooks = [
@@ -100,7 +92,7 @@ function registerServiceWorker() {
   navigator.serviceWorker.register('./sw.js')
     .then(reg => {
       serviceWorkerRegistration = reg;
-      reg.update();
+      window.setTimeout(() => reg.update(), 3000);
       watchServiceWorker(reg);
     })
     .catch(() => {});
@@ -126,7 +118,7 @@ function activateWaitingWorker(worker) {
 }
 
 function wireFreshnessChecks() {
-  checkForFreshBuild();
+  window.setTimeout(checkForFreshBuild, 2500);
   window.addEventListener('focus', checkForFreshBuild);
   window.addEventListener('online', checkForFreshBuild);
   document.addEventListener('visibilitychange', () => {
@@ -137,12 +129,9 @@ function wireFreshnessChecks() {
 
 async function checkForFreshBuild() {
   try {
-    const [build, snapshotChanged] = await Promise.all([
-      fetchBuildVersion(),
-      hasFreshnessSnapshotChanged()
-    ]);
+    const build = await fetchBuildVersion();
     const latestVersion = String(build.version || '').trim();
-    if ((!latestVersion || latestVersion === APP_VERSION) && !snapshotChanged) return;
+    if (!latestVersion || latestVersion === APP_VERSION) return;
 
     await serviceWorkerRegistration?.update?.();
     if (serviceWorkerRegistration?.waiting) {
@@ -150,7 +139,7 @@ async function checkForFreshBuild() {
       return;
     }
 
-    reloadForUpdate(latestVersion || APP_VERSION);
+    reloadForUpdate(latestVersion);
   } catch (error) {
     // Offline starts should keep using the cached app.
   }
@@ -162,38 +151,6 @@ async function fetchBuildVersion() {
     headers: { 'Cache-Control': 'no-cache' }
   });
   return response.ok ? response.json() : {};
-}
-
-async function hasFreshnessSnapshotChanged() {
-  const snapshot = await buildFreshnessSnapshot();
-  if (!snapshot) return false;
-
-  const previous = localStorage.getItem(FRESHNESS_SNAPSHOT_KEY);
-  localStorage.setItem(FRESHNESS_SNAPSHOT_KEY, snapshot);
-  return Boolean(previous && previous !== snapshot);
-}
-
-async function buildFreshnessSnapshot() {
-  const entries = await Promise.all(FRESHNESS_FILES.map(async file => {
-    const separator = file.includes('?') ? '&' : '?';
-    const response = await fetch(`${file}${separator}ts=${Date.now()}`, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
-    });
-    if (!response.ok) return `${file}:missing`;
-    return `${file}:${signatureFor(await response.text())}`;
-  }));
-
-  return entries.join('|');
-}
-
-function signatureFor(value) {
-  let hash = 0;
-  const text = String(value || '');
-  for (let i = 0; i < text.length; i += 1) {
-    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
-  }
-  return `${text.length}:${hash >>> 0}`;
 }
 
 function reloadForUpdate(version) {

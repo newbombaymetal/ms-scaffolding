@@ -1,12 +1,12 @@
 /* NBM — service worker for offline cache. */
-const APP_VERSION = '46';
+const APP_VERSION = '47';
 const CACHE = `nbm-v${APP_VERSION}`;
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=46',
-  './app.js?v=46',
-  './manifest.json',
+  './styles.css?v=47',
+  './app.js?v=47',
+  './manifest.json?v=47',
   './version.json',
   './icons/icon-180.png',
   './icons/icon-192.png',
@@ -38,15 +38,32 @@ self.addEventListener('message', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      caches.match('./index.html').then(hit =>
+        hit || fetch(e.request).then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put('./index.html', copy)).catch(() => {});
+          return res;
+        })
+      )
+    );
+    return;
+  }
+
   e.respondWith(
-    fetch(e.request, { cache: 'reload' }).then(res => {
-      if (res && res.ok) {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
-      }
-      return res;
-    }).catch(() =>
-      caches.match(e.request).then(hit => hit || caches.match('./index.html'))
-    )
+    caches.match(e.request).then(hit => {
+      const fresh = fetch(e.request).then(res => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => null);
+      return hit || fresh.then(res => res || caches.match('./index.html'));
+    })
   );
 });

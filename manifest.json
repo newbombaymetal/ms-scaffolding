@@ -2,9 +2,9 @@
   "name": "New Bombay Metal",
   "short_name": "NBM",
   "description": "New Bombay Metal dashboard for payments, stock, parties, and invoices. Works offline.",
-  "id": "./",
-  "start_url": "./index.html?view=dashboard",
-  "scope": "./",
+  "id": "/ms-scaffolding/",
+  "start_url": "/ms-scaffolding/index.html?view=dashboard",
+  "scope": "/ms-scaffolding/",
   "display": "standalone",
   "display_override": ["standalone", "browser"],
   "orientation": "portrait",
@@ -20,25 +20,25 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "url": "./index.html?view=dashboard",
+      "url": "/ms-scaffolding/index.html?view=dashboard",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Bill Books",
       "short_name": "Bill Books",
-      "url": "./index.html?view=bill-books",
+      "url": "/ms-scaffolding/index.html?view=bill-books",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Parties",
       "short_name": "Parties",
-      "url": "./index.html?view=parties",
+      "url": "/ms-scaffolding/index.html?view=parties",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Invoices",
       "short_name": "Invoices",
-      "url": "./index.html?view=invoices",
+      "url": "/ms-scaffolding/index.html?view=invoices",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
