@@ -904,7 +904,9 @@ svg {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(2, 6, 23, 0.82);
+  backdrop-filter: blur(28px) saturate(70%);
+  -webkit-backdrop-filter: blur(28px) saturate(70%);
   overflow: hidden;
   overscroll-behavior: contain;
 }
@@ -1114,13 +1116,14 @@ svg {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .form-actions .wide-action,
 .form-actions .accent-action {
-  width: auto;
+  width: 100%;
   min-width: 132px;
+  min-height: 54px;
   margin-top: 0;
   justify-content: center;
 }

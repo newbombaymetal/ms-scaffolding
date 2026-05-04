@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '49';
+const APP_VERSION = '50';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -205,7 +205,6 @@ function wireEvents() {
   document.getElementById('new-invoice').addEventListener('click', () => toast('Invoice creator can be wired next'));
   document.getElementById('add-party').addEventListener('click', openPartyForm);
   document.getElementById('party-close').addEventListener('click', closePartyForm);
-  document.getElementById('party-cancel').addEventListener('click', closePartyForm);
   document.getElementById('party-form').addEventListener('submit', savePartyFromForm);
   document.getElementById('party-gst').addEventListener('input', handleGstInput);
   document.getElementById('party-gst').addEventListener('blur', maybeFetchGstDetails);
