@@ -19,6 +19,7 @@
   --status-bg: #070b16;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-fixed-header: calc(246px + var(--safe-top));
 }
 
 * {
@@ -952,12 +953,6 @@ svg {
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-body.top-chrome-hidden .mobile-menu {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(calc(-16px - var(--safe-top)));
-}
-
 .drawer-backdrop {
   position: fixed;
   inset: 0;
@@ -1267,7 +1262,7 @@ body.top-chrome-hidden .mobile-menu {
 
 @media (max-width: 860px) {
   body::before {
-    height: calc(104px + var(--safe-top));
+    height: var(--mobile-fixed-header);
   }
 
   .mobile-menu {
@@ -1287,20 +1282,22 @@ body.top-chrome-hidden .mobile-menu {
   }
 
   .content {
-    padding: calc(72px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
+    padding: calc(var(--mobile-fixed-header) + 8px) 16px calc(24px + var(--safe-bottom));
   }
 
   .topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 40;
+    width: 100%;
+    max-width: 100vw;
+    min-height: var(--mobile-fixed-header);
     align-items: stretch;
     flex-direction: column;
-    max-height: 240px;
-  }
-
-  body.top-chrome-hidden .topbar {
-    max-height: 0;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(calc(-16px - var(--safe-top)));
+    justify-content: flex-start;
+    padding: calc(92px + var(--safe-top)) 16px 18px;
+    background: var(--status-bg);
+    touch-action: pan-y manipulation;
   }
 
   .topbar-tools {
