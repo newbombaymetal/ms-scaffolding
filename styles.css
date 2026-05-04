@@ -415,6 +415,7 @@ svg {
   border: 0;
   border-radius: 18px;
   font-weight: 700;
+  text-align: center;
   transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
 }
 
@@ -434,6 +435,7 @@ svg {
 .accent-action {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   margin-top: 8px;
   padding: 13px 20px;
@@ -855,7 +857,9 @@ svg {
 
 .wide-action {
   width: 100%;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 14px;
   padding: 14px 16px;
   color: #fff;
@@ -1118,6 +1122,7 @@ svg {
   width: auto;
   min-width: 132px;
   margin-top: 0;
+  justify-content: center;
 }
 
 .toast {
