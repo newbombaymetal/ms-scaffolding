@@ -1062,12 +1062,41 @@ svg {
 
 .field-action {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 94px;
   border: 0;
   border-radius: 14px;
   padding: 0 16px;
   color: #020617;
   background: var(--cyan);
   font-weight: 900;
+}
+
+.field-action:disabled {
+  cursor: progress;
+}
+
+.field-action-spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(2, 6, 23, 0.22);
+  border-top-color: #020617;
+  border-radius: 999px;
+  animation: spin 0.7s linear infinite;
+}
+
+.field-action.is-loading .field-action-spinner {
+  display: block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .form-status {

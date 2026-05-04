@@ -1,10 +1,11 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '47';
+const APP_VERSION = '48';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
 let lockedPageScrollY = 0;
+let gstFetchInProgress = false;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -603,6 +604,7 @@ function closePartyForm() {
 function resetPartyForm() {
   document.getElementById('party-form').reset();
   document.getElementById('party-type-customer').checked = true;
+  setGstFetching(false);
   setGstStatus('');
 }
 
@@ -674,6 +676,8 @@ function maybeFetchGstDetails() {
 }
 
 async function fetchGstDetails() {
+  if (gstFetchInProgress) return;
+
   const gstin = normalizeGstin(document.getElementById('party-gst').value);
   const pan = panFromGstin(gstin);
   if (pan) document.getElementById('party-pan').value = pan;
@@ -684,12 +688,15 @@ async function fetchGstDetails() {
   }
 
   setGstStatus('Fetching GST details...');
+  setGstFetching(true);
   try {
     const data = await requestGstDetails(gstin);
     fillGstDetails(data, gstin);
     setGstStatus('GST details filled');
   } catch (error) {
     setGstStatus(error.message || 'GST details could not be fetched');
+  } finally {
+    setGstFetching(false);
   }
 }
 
@@ -769,6 +776,17 @@ function formatGstAddress(address) {
 
 function setGstStatus(message) {
   setText('gst-status', message);
+}
+
+function setGstFetching(isFetching) {
+  gstFetchInProgress = Boolean(isFetching);
+  const button = document.getElementById('fetch-gst');
+  if (!button) return;
+  const label = button.querySelector('.field-action-label');
+  button.disabled = gstFetchInProgress;
+  button.classList.toggle('is-loading', gstFetchInProgress);
+  button.setAttribute('aria-busy', String(gstFetchInProgress));
+  if (label) label.textContent = gstFetchInProgress ? 'Fetching' : 'Fetch';
 }
 
 function normalizeGstin(value) {
