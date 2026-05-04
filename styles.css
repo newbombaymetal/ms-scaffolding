@@ -26,14 +26,20 @@
 }
 
 html {
+  width: 100%;
+  max-width: 100%;
   min-height: 100%;
+  overflow-x: hidden;
   background: var(--status-bg);
 }
 
 body {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   min-height: 100dvh;
   overflow-x: hidden;
+  touch-action: manipulation;
   color: var(--text);
   background:
     radial-gradient(circle at 70% -10%, rgba(59, 130, 246, 0.22), transparent 36rem),
@@ -70,8 +76,18 @@ body.modal-scroll-locked {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
+}
+
+button,
+a,
+label,
+input,
+textarea,
+select {
+  touch-action: manipulation;
 }
 
 button {
@@ -120,7 +136,10 @@ svg {
   position: relative;
   z-index: 2;
   display: flex;
+  width: 100%;
+  max-width: 100vw;
   min-height: 100dvh;
+  overflow-x: clip;
 }
 
 .sidebar {
@@ -237,10 +256,11 @@ svg {
 .content {
   flex: 1;
   width: 100%;
-  max-width: 1480px;
+  max-width: min(1480px, 100%);
   min-width: 0;
   margin: 0 auto;
   padding: calc(24px + var(--safe-top)) 24px calc(32px + var(--safe-bottom));
+  overflow-x: clip;
 }
 
 .topbar {
@@ -323,6 +343,9 @@ svg {
 }
 
 .view-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin-top: 24px;
 }
 
@@ -332,6 +355,8 @@ svg {
 .book-card,
 .data-row,
 .modal-card {
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--line);
   background: rgba(13, 20, 40, 0.92);
   box-shadow: 0 20px 55px rgba(0, 0, 0, 0.2);
@@ -485,10 +510,18 @@ svg {
 .section-toolbar,
 .data-row,
 .settings-row {
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.section-toolbar > *,
+.data-row > *,
+.settings-row > * {
+  min-width: 0;
 }
 
 .stat-head p,
@@ -734,8 +767,15 @@ svg {
 .party-title-line {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
   min-width: 0;
+}
+
+.party-title-line h4 {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .party-title-line .status-pill {
@@ -789,15 +829,25 @@ svg {
 }
 
 .data-row {
+  width: 100%;
+  overflow: hidden;
   padding: 16px;
   border-radius: 20px;
 }
 
 .data-main {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   gap: 14px;
+  max-width: 100%;
   min-width: 0;
+}
+
+.data-main > div:not(.data-icon) {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .data-icon {
@@ -814,9 +864,10 @@ svg {
 
 .data-main h4,
 .data-main p {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .data-main p {
@@ -831,6 +882,7 @@ svg {
 }
 
 .data-amount {
+  flex-shrink: 0;
   color: var(--green);
   font-weight: 800;
   white-space: nowrap;
@@ -1267,8 +1319,13 @@ svg {
 @media (max-width: 620px) {
   .section-toolbar,
   .data-row {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
+  }
+
+  .section-toolbar > *,
+  .data-main {
+    width: 100%;
   }
 
   .hero-columns {
