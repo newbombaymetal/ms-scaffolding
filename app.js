@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '52';
+const APP_VERSION = '53';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   wireEvents();
   wireInstallPrompt();
   showInitialView();
+  updateTopChromeVisibility();
 
   registerServiceWorker();
 });
@@ -214,6 +215,7 @@ function wireEvents() {
     applySearch();
   });
   document.getElementById('export-data').addEventListener('click', exportData);
+  window.addEventListener('scroll', updateTopChromeVisibility, { passive: true });
 }
 
 function showInitialView() {
@@ -888,6 +890,7 @@ function totalForCustomer(name) {
 }
 
 function openDrawer() {
+  document.body.classList.remove('top-chrome-hidden');
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('drawer-backdrop').classList.remove('hidden');
 }
@@ -895,6 +898,12 @@ function openDrawer() {
 function closeDrawer() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('drawer-backdrop').classList.add('hidden');
+  updateTopChromeVisibility();
+}
+
+function updateTopChromeVisibility() {
+  const shouldHide = window.scrollY > 24 && !document.getElementById('sidebar')?.classList.contains('open');
+  document.body.classList.toggle('top-chrome-hidden', shouldHide);
 }
 
 function openAi() {
