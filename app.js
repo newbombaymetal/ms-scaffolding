@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '59';
+const APP_VERSION = '60';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -621,24 +621,46 @@ async function writeQuotationPdf() {
 
     const pageNumber = safeNumber('quotation-page-number', 1);
     const page = pages[Math.min(Math.max(pageNumber, 1), pages.length) - 1];
-    const fontSize = Math.min(Math.max(safeNumber('quotation-font-size', 14), 6), 72);
-    const x = Math.max(0, safeNumber('quotation-x-position', 40));
-    const yTop = Math.max(0, safeNumber('quotation-y-position', 80));
-    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const { width, height } = page.getSize();
-    const maxWidth = Math.max(40, width - x - 24);
-    const lines = wrapPdfText(text, font, fontSize, maxWidth);
-    const startY = Math.max(12, height - yTop - fontSize);
+    const fontSize = clampNumber(safeNumber('quotation-font-size', 48), 10, 180);
+    const style = checkedValue('quotation-font-style', 'regular');
+    const align = checkedValue('quotation-align', 'left');
+    const underline = Boolean(document.getElementById('quotation-underline')?.checked);
+    const color = pdfColorFromHex(document.getElementById('quotation-text-color')?.value, rgb);
+    const font = await pdfDoc.embedFont(standardFontForStyle(style, StandardFonts));
+    const boxX = clampNumber(safeNumber('quotation-box-x', 150), 0, Math.max(0, width - 40));
+    const boxTopFromPage = clampNumber(safeNumber('quotation-box-y', 761), 0, Math.max(0, height - fontSize));
+    const boxWidth = clampNumber(safeNumber('quotation-box-width', 2270), 40, Math.max(40, width - boxX - 12));
+    const boxHeight = clampNumber(safeNumber('quotation-box-height', 2224), fontSize * 1.5, Math.max(fontSize * 1.5, height - boxTopFromPage - 12));
+    const boxTopY = height - boxTopFromPage;
+    const boxBottomY = Math.max(12, boxTopY - boxHeight);
+    const lineHeight = fontSize * 1.28;
+    const normalizedText = makePdfTextSafe(normalizePdfText(text), font);
+    const allLines = wrapPdfText(normalizedText, font, fontSize, boxWidth);
+    const maxLines = Math.max(1, Math.floor((boxTopY - boxBottomY - fontSize) / lineHeight) + 1);
+    const lines = allLines.slice(0, maxLines);
 
     lines.forEach((line, index) => {
-      const y = Math.max(12, startY - index * fontSize * 1.28);
+      const y = boxTopY - fontSize - index * lineHeight;
+      if (y < boxBottomY) return;
+      const textWidth = Math.min(font.widthOfTextAtSize(line, fontSize), boxWidth);
+      const x = alignedPdfX(boxX, boxWidth, textWidth, align);
       page.drawText(line, {
         x,
         y,
         size: fontSize,
         font,
-        color: rgb(0, 0, 0)
+        color
       });
+
+      if (underline && line) {
+        page.drawLine({
+          start: { x, y: y - Math.max(2, fontSize * 0.08) },
+          end: { x: x + textWidth, y: y - Math.max(2, fontSize * 0.08) },
+          thickness: Math.max(1, fontSize * 0.06),
+          color
+        });
+      }
     });
 
     revokeQuotationDownload();
@@ -664,13 +686,58 @@ function safeNumber(id, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function checkedValue(name, fallback) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value || fallback;
+}
+
+function standardFontForStyle(style, StandardFonts) {
+  if (style === 'bold') return StandardFonts.HelveticaBold;
+  if (style === 'italic') return StandardFonts.HelveticaOblique;
+  if (style === 'bold-italic') return StandardFonts.HelveticaBoldOblique;
+  return StandardFonts.Helvetica;
+}
+
+function pdfColorFromHex(hex, rgb) {
+  const cleaned = String(hex || '#111827').replace('#', '').trim();
+  const value = /^[0-9a-f]{6}$/i.test(cleaned) ? cleaned : '111827';
+  const red = parseInt(value.slice(0, 2), 16) / 255;
+  const green = parseInt(value.slice(2, 4), 16) / 255;
+  const blue = parseInt(value.slice(4, 6), 16) / 255;
+  return rgb(red, green, blue);
+}
+
+function normalizePdfText(text) {
+  return text
+    .replace(/\u00a0/g, ' ')
+    .replace(/[₹]/g, 'Rs. ')
+    .replace(/[–—]/g, '-')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'");
+}
+
+function makePdfTextSafe(text, font) {
+  return Array.from(text).map(char => {
+    if (char === '\n') return char;
+    try {
+      font.encodeText(char);
+      return char;
+    } catch (error) {
+      return ' ';
+    }
+  }).join('');
+}
+
 function wrapPdfText(text, font, size, maxWidth) {
   return text.split(/\n/).flatMap(rawLine => {
     const words = rawLine.trim().split(/\s+/).filter(Boolean);
     if (!words.length) return [''];
     const lines = [];
     let line = '';
-    words.forEach(word => {
+    words.flatMap(word => splitPdfWord(word, font, size, maxWidth)).forEach(word => {
       const next = line ? `${line} ${word}` : word;
       if (font.widthOfTextAtSize(next, size) <= maxWidth || !line) {
         line = next;
@@ -682,6 +749,29 @@ function wrapPdfText(text, font, size, maxWidth) {
     if (line) lines.push(line);
     return lines;
   });
+}
+
+function splitPdfWord(word, font, size, maxWidth) {
+  if (font.widthOfTextAtSize(word, size) <= maxWidth) return [word];
+  const chunks = [];
+  let chunk = '';
+  Array.from(word).forEach(char => {
+    const next = `${chunk}${char}`;
+    if (font.widthOfTextAtSize(next, size) <= maxWidth || !chunk) {
+      chunk = next;
+      return;
+    }
+    chunks.push(chunk);
+    chunk = char;
+  });
+  if (chunk) chunks.push(chunk);
+  return chunks;
+}
+
+function alignedPdfX(boxX, boxWidth, textWidth, align) {
+  if (align === 'center') return boxX + Math.max(0, (boxWidth - textWidth) / 2);
+  if (align === 'right') return boxX + Math.max(0, boxWidth - textWidth);
+  return boxX;
 }
 
 function revokeQuotationDownload() {

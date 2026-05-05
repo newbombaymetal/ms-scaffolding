@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="59">
+  <meta name="app-version" content="60">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NBM">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="manifest" href="manifest.json?v=59">
+  <link rel="manifest" href="manifest.json?v=60">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=59">
+  <link rel="stylesheet" href="styles.css?v=60">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -215,25 +215,68 @@
           <div class="quotation-grid">
             <label class="form-field wide">
               <span>Text</span>
-              <textarea id="quotation-write-text" rows="4" placeholder="New Bombay Metal"></textarea>
+              <textarea id="quotation-write-text" rows="7" placeholder="Write quotation text here"></textarea>
             </label>
+            <div class="form-field wide">
+              <span>Font Style</span>
+              <div class="format-cards four" role="radiogroup" aria-label="Font Style">
+                <label class="format-card">
+                  <input type="radio" name="quotation-font-style" value="regular" checked>
+                  <b>Regular</b>
+                </label>
+                <label class="format-card">
+                  <input type="radio" name="quotation-font-style" value="bold">
+                  <b>Bold</b>
+                </label>
+                <label class="format-card">
+                  <input type="radio" name="quotation-font-style" value="italic">
+                  <b>Italic</b>
+                </label>
+                <label class="format-card">
+                  <input type="radio" name="quotation-font-style" value="bold-italic">
+                  <b>Bold Italic</b>
+                </label>
+              </div>
+            </div>
+            <div class="form-field wide">
+              <span>Text Align</span>
+              <div class="format-cards three" role="radiogroup" aria-label="Text Align">
+                <label class="format-card">
+                  <input type="radio" name="quotation-align" value="left" checked>
+                  <b>Left</b>
+                </label>
+                <label class="format-card">
+                  <input type="radio" name="quotation-align" value="center">
+                  <b>Middle</b>
+                </label>
+                <label class="format-card">
+                  <input type="radio" name="quotation-align" value="right">
+                  <b>Right</b>
+                </label>
+              </div>
+            </div>
             <label class="form-field">
               <span>Page No.</span>
               <input id="quotation-page-number" type="number" min="1" value="1">
             </label>
             <label class="form-field">
-              <span>X Position</span>
-              <input id="quotation-x-position" type="number" min="0" value="40">
+              <span>Text Size</span>
+              <input id="quotation-font-size" type="number" min="10" max="180" value="48">
             </label>
             <label class="form-field">
-              <span>Y From Top</span>
-              <input id="quotation-y-position" type="number" min="0" value="80">
+              <span>Color</span>
+              <input class="quotation-color" id="quotation-text-color" type="color" value="#111827">
             </label>
-            <label class="form-field">
-              <span>Font Size</span>
-              <input id="quotation-font-size" type="number" min="6" max="72" value="14">
+            <label class="format-toggle">
+              <input id="quotation-underline" type="checkbox">
+              <span>Underline</span>
             </label>
           </div>
+
+          <input id="quotation-box-x" type="hidden" value="150">
+          <input id="quotation-box-y" type="hidden" value="761">
+          <input id="quotation-box-width" type="hidden" value="2270">
+          <input id="quotation-box-height" type="hidden" value="2224">
 
           <div class="quotation-actions">
             <button class="accent-action compact" id="write-quotation-pdf" type="button">
@@ -372,6 +415,6 @@
 
   <div class="toast hidden" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="app.js?v=59"></script>
+  <script src="app.js?v=60"></script>
 </body>
 </html>
