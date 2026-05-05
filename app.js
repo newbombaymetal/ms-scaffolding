@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '54';
+const APP_VERSION = '55';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -52,10 +52,10 @@ const sampleActivity = [
 
 const titles = {
   dashboard: ['NBM', 'New Bombay Metal'],
-  'bill-books': ['Bill Books', 'Monitor series, stock, and billing continuity'],
-  parties: ['Parties', 'Customers and suppliers in one clean view'],
-  invoices: ['Invoices', 'Recent invoice and payment activity'],
-  settings: ['Settings', 'Business profile and local app preferences']
+  'bill-books': ['NBM', 'New Bombay Metal'],
+  parties: ['NBM', 'New Bombay Metal'],
+  invoices: ['NBM', 'New Bombay Metal'],
+  settings: ['NBM', 'New Bombay Metal']
 };
 
 let state = { transactions: [], customers: [], business: {} };

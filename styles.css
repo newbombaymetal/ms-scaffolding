@@ -19,7 +19,7 @@
   --status-bg: #070b16;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --mobile-fixed-header: calc(246px + var(--safe-top));
+  --mobile-fixed-header: calc(218px + var(--safe-top));
 }
 
 * {
@@ -133,7 +133,7 @@ svg {
   width: 100%;
   max-width: 100vw;
   min-height: 100dvh;
-  background: var(--status-bg);
+  background: transparent;
   overflow-x: clip;
 }
 
@@ -255,7 +255,7 @@ svg {
   min-width: 0;
   margin: 0 auto;
   padding: calc(24px + var(--safe-top)) 24px calc(32px + var(--safe-bottom));
-  background: var(--status-bg);
+  background: transparent;
   overflow-x: clip;
 }
 
@@ -1292,12 +1292,29 @@ svg {
     width: 100%;
     max-width: 100vw;
     min-height: var(--mobile-fixed-header);
+    gap: 18px;
     align-items: stretch;
     flex-direction: column;
     justify-content: flex-start;
-    padding: calc(92px + var(--safe-top)) 16px 18px;
+    padding: calc(50px + var(--safe-top)) 16px 18px;
     background: var(--status-bg);
     touch-action: pan-y manipulation;
+  }
+
+  .topbar-heading {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .topbar h2 {
+    font-size: 34px;
+    line-height: 1;
+  }
+
+  .topbar p {
+    margin-top: 6px;
   }
 
   .topbar-tools {
