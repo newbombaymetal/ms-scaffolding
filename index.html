@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="58">
+  <meta name="app-version" content="59">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NBM">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="manifest" href="manifest.json?v=58">
+  <link rel="manifest" href="manifest.json?v=59">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=58">
+  <link rel="stylesheet" href="styles.css?v=59">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -53,6 +53,10 @@
         <button class="nav-item" data-view="items">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 16-9 5-9-5"/><path d="m21 12-9 5-9-5"/><path d="m12 3 9 5-9 5-9-5 9-5Z"/></svg>
           Items
+        </button>
+        <button class="nav-item" data-view="quotation-enquiry">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+          Quotation / Enquiry
         </button>
         <button class="nav-item" data-view="invoices">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
@@ -190,6 +194,58 @@
         <div class="data-list" id="item-list"></div>
       </section>
 
+      <section class="view-panel hidden" id="view-quotation-enquiry">
+        <div class="section-toolbar">
+          <div>
+            <h3>Quotation / Enquiry</h3>
+            <p>PDF writing desk for quotation pages.</p>
+          </div>
+        </div>
+
+        <section class="panel quotation-panel">
+          <div class="quotation-upload-row">
+            <label class="accent-action compact file-action" for="quotation-pdf">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg>
+              Upload PDF
+            </label>
+            <input class="file-input" id="quotation-pdf" type="file" accept="application/pdf">
+            <span class="file-name" id="quotation-file-name">No PDF selected</span>
+          </div>
+
+          <div class="quotation-grid">
+            <label class="form-field wide">
+              <span>Text</span>
+              <textarea id="quotation-write-text" rows="4" placeholder="New Bombay Metal"></textarea>
+            </label>
+            <label class="form-field">
+              <span>Page No.</span>
+              <input id="quotation-page-number" type="number" min="1" value="1">
+            </label>
+            <label class="form-field">
+              <span>X Position</span>
+              <input id="quotation-x-position" type="number" min="0" value="40">
+            </label>
+            <label class="form-field">
+              <span>Y From Top</span>
+              <input id="quotation-y-position" type="number" min="0" value="80">
+            </label>
+            <label class="form-field">
+              <span>Font Size</span>
+              <input id="quotation-font-size" type="number" min="6" max="72" value="14">
+            </label>
+          </div>
+
+          <div class="quotation-actions">
+            <button class="accent-action compact" id="write-quotation-pdf" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Write On PDF
+            </button>
+            <a class="wide-action download-action hidden" id="quotation-download">Download PDF</a>
+          </div>
+          <div class="form-status" id="quotation-status" aria-live="polite"></div>
+        </section>
+      </section>
+
       <section class="view-panel hidden" id="view-invoices">
         <div class="section-toolbar">
           <div>
@@ -315,6 +371,7 @@
   </div>
 
   <div class="toast hidden" id="toast"></div>
-  <script src="app.js?v=58"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="app.js?v=59"></script>
 </body>
 </html>

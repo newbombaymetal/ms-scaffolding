@@ -1043,6 +1043,52 @@ svg {
   margin-top: 20px;
 }
 
+.quotation-panel {
+  padding: 20px;
+  border-radius: var(--radius-xl);
+}
+
+.quotation-upload-row,
+.quotation-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quotation-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.file-action {
+  cursor: pointer;
+}
+
+.file-name {
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.download-action {
+  width: auto;
+  min-height: 46px;
+  margin-top: 8px;
+  color: #fff;
+  text-decoration: none;
+}
+
 .form-field {
   display: grid;
   gap: 8px;
@@ -1408,14 +1454,21 @@ svg {
     grid-template-columns: 1fr;
   }
 
+  .quotation-grid {
+    grid-template-columns: 1fr;
+  }
+
   .field-with-action,
-  .form-actions {
+  .form-actions,
+  .quotation-actions {
     flex-direction: column;
   }
 
   .field-action,
   .form-actions .wide-action,
-  .form-actions .accent-action {
+  .form-actions .accent-action,
+  .quotation-actions .accent-action,
+  .quotation-actions .wide-action {
     width: 100%;
     min-height: 46px;
   }

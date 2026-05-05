@@ -1,11 +1,13 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '58';
+const APP_VERSION = '59';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
 let lockedPageScrollY = 0;
 let gstFetchInProgress = false;
+let quotationPdfFile = null;
+let quotationDownloadUrl = '';
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -55,6 +57,7 @@ const titles = {
   'bill-books': ['NBM', 'New Bombay Metal'],
   parties: ['NBM', 'New Bombay Metal'],
   items: ['NBM', 'New Bombay Metal'],
+  'quotation-enquiry': ['NBM', 'New Bombay Metal'],
   invoices: ['NBM', 'New Bombay Metal'],
   settings: ['NBM', 'New Bombay Metal']
 };
@@ -204,6 +207,8 @@ function wireEvents() {
   if (createBook) createBook.addEventListener('click', () => toast('New bill book flow ready'));
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
   document.getElementById('add-item').addEventListener('click', () => toast('Add item flow ready'));
+  document.getElementById('quotation-pdf').addEventListener('change', handleQuotationPdf);
+  document.getElementById('write-quotation-pdf').addEventListener('click', writeQuotationPdf);
   document.getElementById('new-invoice').addEventListener('click', () => toast('Invoice creator can be wired next'));
   document.getElementById('add-party').addEventListener('click', openPartyForm);
   document.getElementById('party-close').addEventListener('click', closePartyForm);
@@ -576,6 +581,113 @@ function renderItems() {
       <strong class="data-amount">${formatNumber(item.kg)} kg</strong>
     </article>
   `).join('');
+}
+
+function handleQuotationPdf(event) {
+  quotationPdfFile = event.target.files?.[0] || null;
+  revokeQuotationDownload();
+  document.getElementById('quotation-download').classList.add('hidden');
+  setText('quotation-file-name', quotationPdfFile ? quotationPdfFile.name : 'No PDF selected');
+  setText('quotation-status', quotationPdfFile ? 'PDF selected' : '');
+}
+
+async function writeQuotationPdf() {
+  if (!quotationPdfFile) {
+    setText('quotation-status', 'Select a PDF first.');
+    return;
+  }
+
+  const text = document.getElementById('quotation-write-text').value.trim();
+  if (!text) {
+    setText('quotation-status', 'Enter text to write.');
+    return;
+  }
+
+  if (!window.PDFLib?.PDFDocument) {
+    setText('quotation-status', 'PDF writer is still loading.');
+    return;
+  }
+
+  const button = document.getElementById('write-quotation-pdf');
+  button.disabled = true;
+  setText('quotation-status', 'Writing PDF...');
+
+  try {
+    const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+    const bytes = await quotationPdfFile.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const pages = pdfDoc.getPages();
+    if (!pages.length) throw new Error('No pages found in PDF.');
+
+    const pageNumber = safeNumber('quotation-page-number', 1);
+    const page = pages[Math.min(Math.max(pageNumber, 1), pages.length) - 1];
+    const fontSize = Math.min(Math.max(safeNumber('quotation-font-size', 14), 6), 72);
+    const x = Math.max(0, safeNumber('quotation-x-position', 40));
+    const yTop = Math.max(0, safeNumber('quotation-y-position', 80));
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const { width, height } = page.getSize();
+    const maxWidth = Math.max(40, width - x - 24);
+    const lines = wrapPdfText(text, font, fontSize, maxWidth);
+    const startY = Math.max(12, height - yTop - fontSize);
+
+    lines.forEach((line, index) => {
+      const y = Math.max(12, startY - index * fontSize * 1.28);
+      page.drawText(line, {
+        x,
+        y,
+        size: fontSize,
+        font,
+        color: rgb(0, 0, 0)
+      });
+    });
+
+    revokeQuotationDownload();
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    quotationDownloadUrl = URL.createObjectURL(blob);
+
+    const download = document.getElementById('quotation-download');
+    download.href = quotationDownloadUrl;
+    download.download = `${quotationPdfFile.name.replace(/\.pdf$/i, '') || 'quotation'}-nbm.pdf`;
+    download.classList.remove('hidden');
+    setText('quotation-status', `PDF ready · ${lines.length} line${lines.length === 1 ? '' : 's'} written`);
+  } catch (error) {
+    console.error(error);
+    setText('quotation-status', 'Unable to write on this PDF.');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function safeNumber(id, fallback) {
+  const value = Number(document.getElementById(id)?.value);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function wrapPdfText(text, font, size, maxWidth) {
+  return text.split(/\n/).flatMap(rawLine => {
+    const words = rawLine.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return [''];
+    const lines = [];
+    let line = '';
+    words.forEach(word => {
+      const next = line ? `${line} ${word}` : word;
+      if (font.widthOfTextAtSize(next, size) <= maxWidth || !line) {
+        line = next;
+        return;
+      }
+      lines.push(line);
+      line = word;
+    });
+    if (line) lines.push(line);
+    return lines;
+  });
+}
+
+function revokeQuotationDownload() {
+  if (!quotationDownloadUrl) return;
+  URL.revokeObjectURL(quotationDownloadUrl);
+  quotationDownloadUrl = '';
 }
 
 function renderInvoices() {

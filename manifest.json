@@ -1,7 +1,7 @@
 {
   "name": "New Bombay Metal",
   "short_name": "NBM",
-  "description": "New Bombay Metal dashboard for payments, stock, items, parties, and invoices. Works offline.",
+  "description": "New Bombay Metal dashboard for payments, stock, items, quotations, parties, and invoices. Works offline.",
   "id": "/ms-scaffolding/",
   "start_url": "/ms-scaffolding/index.html?view=dashboard",
   "scope": "/ms-scaffolding/",
@@ -39,6 +39,12 @@
       "name": "Items",
       "short_name": "Items",
       "url": "/ms-scaffolding/index.html?view=items",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Quotation / Enquiry",
+      "short_name": "Quotation",
+      "url": "/ms-scaffolding/index.html?view=quotation-enquiry",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
