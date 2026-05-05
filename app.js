@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '57';
+const APP_VERSION = '58';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -54,6 +54,7 @@ const titles = {
   dashboard: ['NBM', 'New Bombay Metal'],
   'bill-books': ['NBM', 'New Bombay Metal'],
   parties: ['NBM', 'New Bombay Metal'],
+  items: ['NBM', 'New Bombay Metal'],
   invoices: ['NBM', 'New Bombay Metal'],
   settings: ['NBM', 'New Bombay Metal']
 };
@@ -202,6 +203,7 @@ function wireEvents() {
   const createBook = document.getElementById('create-book');
   if (createBook) createBook.addEventListener('click', () => toast('New bill book flow ready'));
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
+  document.getElementById('add-item').addEventListener('click', () => toast('Add item flow ready'));
   document.getElementById('new-invoice').addEventListener('click', () => toast('Invoice creator can be wired next'));
   document.getElementById('add-party').addEventListener('click', openPartyForm);
   document.getElementById('party-close').addEventListener('click', closePartyForm);
@@ -261,6 +263,7 @@ function renderAll() {
   renderActivity();
   renderBillBooks();
   renderParties();
+  renderItems();
   renderInvoices();
   renderProfile();
 }
@@ -548,6 +551,29 @@ function renderParties() {
         </div>
       </div>
       <strong class="data-amount">₹ ${formatMoney(party.amount)}</strong>
+    </article>
+  `).join('');
+}
+
+function renderItems() {
+  const list = document.getElementById('item-list');
+  const items = stockSummaryItems();
+
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-state">No items found.</div>';
+    return;
+  }
+
+  list.innerHTML = items.map(item => `
+    <article class="data-row searchable-item" data-search="${escapeAttr(`${item.name} ${item.kg} kg stock item material`)}">
+      <div class="data-main">
+        <div class="data-icon">${escapeHtml(initials(item.name))}</div>
+        <div>
+          <h4>${escapeHtml(item.name)}</h4>
+          <p>Stock item · ${formatNumber(item.kg)} kg available</p>
+        </div>
+      </div>
+      <strong class="data-amount">${formatNumber(item.kg)} kg</strong>
     </article>
   `).join('');
 }
