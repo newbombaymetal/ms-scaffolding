@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="60">
+  <meta name="app-version" content="61">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NBM">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="manifest" href="manifest.json?v=60">
+  <link rel="manifest" href="manifest.json?v=61">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=60">
+  <link rel="stylesheet" href="styles.css?v=61">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -203,89 +203,103 @@
         </div>
 
         <section class="panel quotation-panel">
-          <div class="quotation-upload-row">
-            <label class="accent-action compact file-action" for="quotation-pdf">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg>
-              Upload PDF
-            </label>
-            <input class="file-input" id="quotation-pdf" type="file" accept="application/pdf">
-            <span class="file-name" id="quotation-file-name">No PDF selected</span>
-          </div>
+          <div class="quotation-studio">
+            <div class="quotation-preview-column">
+              <div class="quotation-upload-row">
+                <label class="accent-action compact file-action" for="quotation-pdf">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg>
+                  Upload PDF
+                </label>
+                <input class="file-input" id="quotation-pdf" type="file" accept="application/pdf">
+                <span class="file-name" id="quotation-file-name">Loading quotation paper...</span>
+              </div>
 
-          <div class="quotation-grid">
-            <label class="form-field wide">
-              <span>Text</span>
-              <textarea id="quotation-write-text" rows="7" placeholder="Write quotation text here"></textarea>
-            </label>
-            <div class="form-field wide">
-              <span>Font Style</span>
-              <div class="format-cards four" role="radiogroup" aria-label="Font Style">
-                <label class="format-card">
-                  <input type="radio" name="quotation-font-style" value="regular" checked>
-                  <b>Regular</b>
-                </label>
-                <label class="format-card">
-                  <input type="radio" name="quotation-font-style" value="bold">
-                  <b>Bold</b>
-                </label>
-                <label class="format-card">
-                  <input type="radio" name="quotation-font-style" value="italic">
-                  <b>Italic</b>
-                </label>
-                <label class="format-card">
-                  <input type="radio" name="quotation-font-style" value="bold-italic">
-                  <b>Bold Italic</b>
-                </label>
+              <div class="quotation-paper-frame" id="quotation-paper-frame">
+                <div class="quotation-paper" id="quotation-paper">
+                  <canvas class="quotation-preview-canvas" id="quotation-preview-canvas" aria-label="Quotation PDF preview"></canvas>
+                  <textarea class="quotation-live-input" id="quotation-write-text" rows="4" aria-label="Type on quotation paper" placeholder="Type here"></textarea>
+                  <div class="quotation-preview-empty" id="quotation-preview-empty">Quotation paper loading...</div>
+                </div>
               </div>
             </div>
-            <div class="form-field wide">
-              <span>Text Align</span>
-              <div class="format-cards three" role="radiogroup" aria-label="Text Align">
-                <label class="format-card">
-                  <input type="radio" name="quotation-align" value="left" checked>
-                  <b>Left</b>
+
+            <div class="quotation-controls">
+              <div class="quotation-grid">
+                <div class="form-field wide">
+                  <span>Font Style</span>
+                  <div class="format-cards four" role="radiogroup" aria-label="Font Style">
+                    <label class="format-card">
+                      <input type="radio" name="quotation-font-style" value="regular" checked>
+                      <b>Regular</b>
+                    </label>
+                    <label class="format-card">
+                      <input type="radio" name="quotation-font-style" value="bold">
+                      <b>Bold</b>
+                    </label>
+                    <label class="format-card">
+                      <input type="radio" name="quotation-font-style" value="italic">
+                      <b>Italic</b>
+                    </label>
+                    <label class="format-card">
+                      <input type="radio" name="quotation-font-style" value="bold-italic">
+                      <b>Bold Italic</b>
+                    </label>
+                  </div>
+                </div>
+                <div class="form-field wide">
+                  <span>Text Align</span>
+                  <div class="format-cards three" role="radiogroup" aria-label="Text Align">
+                    <label class="format-card">
+                      <input type="radio" name="quotation-align" value="left" checked>
+                      <b>Left</b>
+                    </label>
+                    <label class="format-card">
+                      <input type="radio" name="quotation-align" value="center">
+                      <b>Middle</b>
+                    </label>
+                    <label class="format-card">
+                      <input type="radio" name="quotation-align" value="right">
+                      <b>Right</b>
+                    </label>
+                  </div>
+                </div>
+                <label class="form-field">
+                  <span>Page No.</span>
+                  <input id="quotation-page-number" type="number" min="1" value="1">
                 </label>
-                <label class="format-card">
-                  <input type="radio" name="quotation-align" value="center">
-                  <b>Middle</b>
+                <label class="form-field">
+                  <span>Text Size</span>
+                  <input id="quotation-font-size" type="number" min="10" max="180" value="48">
                 </label>
-                <label class="format-card">
-                  <input type="radio" name="quotation-align" value="right">
-                  <b>Right</b>
+                <label class="form-field">
+                  <span>Color</span>
+                  <input class="quotation-color" id="quotation-text-color" type="color" value="#111827">
+                </label>
+                <label class="format-toggle">
+                  <input id="quotation-underline" type="checkbox">
+                  <span>Underline</span>
                 </label>
               </div>
+
+              <input id="quotation-box-x" type="hidden" value="150">
+              <input id="quotation-box-y" type="hidden" value="761">
+              <input id="quotation-box-width" type="hidden" value="2270">
+              <input id="quotation-box-height" type="hidden" value="2224">
+
+              <div class="quotation-actions">
+                <button class="accent-action compact" id="write-quotation-pdf" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  Write On PDF
+                </button>
+                <button class="wide-action compact print-action" id="print-quotation-pdf" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+                  Print Preview
+                </button>
+                <a class="wide-action download-action hidden" id="quotation-download">Download PDF</a>
+              </div>
+              <div class="form-status" id="quotation-status" aria-live="polite"></div>
             </div>
-            <label class="form-field">
-              <span>Page No.</span>
-              <input id="quotation-page-number" type="number" min="1" value="1">
-            </label>
-            <label class="form-field">
-              <span>Text Size</span>
-              <input id="quotation-font-size" type="number" min="10" max="180" value="48">
-            </label>
-            <label class="form-field">
-              <span>Color</span>
-              <input class="quotation-color" id="quotation-text-color" type="color" value="#111827">
-            </label>
-            <label class="format-toggle">
-              <input id="quotation-underline" type="checkbox">
-              <span>Underline</span>
-            </label>
           </div>
-
-          <input id="quotation-box-x" type="hidden" value="150">
-          <input id="quotation-box-y" type="hidden" value="761">
-          <input id="quotation-box-width" type="hidden" value="2270">
-          <input id="quotation-box-height" type="hidden" value="2224">
-
-          <div class="quotation-actions">
-            <button class="accent-action compact" id="write-quotation-pdf" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              Write On PDF
-            </button>
-            <a class="wide-action download-action hidden" id="quotation-download">Download PDF</a>
-          </div>
-          <div class="form-status" id="quotation-status" aria-live="polite"></div>
         </section>
       </section>
 
@@ -414,7 +428,8 @@
   </div>
 
   <div class="toast hidden" id="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="app.js?v=60"></script>
+  <script src="app.js?v=61"></script>
 </body>
 </html>

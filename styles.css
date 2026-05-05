@@ -1048,6 +1048,23 @@ svg {
   border-radius: var(--radius-xl);
 }
 
+.quotation-studio {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 420px);
+  gap: 18px;
+  align-items: start;
+}
+
+.quotation-preview-column,
+.quotation-controls {
+  min-width: 0;
+}
+
+.quotation-preview-column {
+  display: grid;
+  gap: 14px;
+}
+
 .quotation-upload-row,
 .quotation-actions {
   display: flex;
@@ -1056,10 +1073,88 @@ svg {
   flex-wrap: wrap;
 }
 
+.quotation-paper-frame {
+  width: 100%;
+  max-width: 100%;
+  max-height: min(82dvh, 960px);
+  overflow: auto;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 22px;
+  padding: 12px;
+  background: rgba(2, 6, 23, 0.48);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.quotation-paper {
+  position: relative;
+  min-width: 0;
+  min-height: 520px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.quotation-preview-canvas {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: none;
+  background: #ffffff;
+}
+
+.quotation-preview-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  color: #475569;
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.quotation-live-input {
+  position: absolute;
+  z-index: 2;
+  display: none;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  padding: 0;
+  resize: none;
+  overflow: auto;
+  color: #111827;
+  background: transparent;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: pre-wrap;
+  box-shadow: none;
+  caret-color: #0284c7;
+}
+
+.quotation-live-input:focus {
+  background: rgba(91, 229, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.32);
+}
+
 .quotation-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+  margin-top: 18px;
+}
+
+.quotation-controls .quotation-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0;
+}
+
+.quotation-actions {
   margin-top: 18px;
 }
 
@@ -1152,6 +1247,12 @@ svg {
   margin-top: 8px;
   color: #fff;
   text-decoration: none;
+}
+
+.print-action {
+  color: var(--soft);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .form-field {
@@ -1524,7 +1625,24 @@ svg {
     grid-template-columns: 1fr;
   }
 
+  .quotation-studio {
+    grid-template-columns: 1fr;
+  }
+
+  .quotation-paper-frame {
+    max-height: 68dvh;
+    padding: 8px;
+  }
+
+  .quotation-paper {
+    min-height: 420px;
+  }
+
   .quotation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quotation-controls .quotation-grid {
     grid-template-columns: 1fr;
   }
 

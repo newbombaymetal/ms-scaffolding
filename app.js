@@ -1,13 +1,23 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '60';
+const APP_VERSION = '61';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
+const DEFAULT_QUOTATION_PDF = './assets/nbm-quotation-template.pdf';
+const DEFAULT_QUOTATION_NAME = 'NBM Quotation Paper-nbm.pdf';
 let lockedPageScrollY = 0;
 let gstFetchInProgress = false;
 let quotationPdfFile = null;
+let quotationPdfBytes = null;
+let quotationPdfName = '';
 let quotationDownloadUrl = '';
+let quotationPrintPreviewUrl = '';
+let quotationPreviewScale = 0;
+let quotationPreviewPageSize = { width: 0, height: 0 };
+let quotationRenderToken = 0;
+let quotationTemplateLoadStarted = false;
+let quotationResizeTimer = null;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -208,7 +218,17 @@ function wireEvents() {
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
   document.getElementById('add-item').addEventListener('click', () => toast('Add item flow ready'));
   document.getElementById('quotation-pdf').addEventListener('change', handleQuotationPdf);
+  document.getElementById('quotation-write-text').addEventListener('input', handleQuotationEditorChange);
+  document.getElementById('quotation-page-number').addEventListener('input', handleQuotationPageChange);
+  document.getElementById('quotation-font-size').addEventListener('input', handleQuotationEditorChange);
+  document.getElementById('quotation-text-color').addEventListener('input', handleQuotationEditorChange);
+  document.getElementById('quotation-underline').addEventListener('change', handleQuotationEditorChange);
+  document.querySelectorAll('input[name="quotation-font-style"], input[name="quotation-align"]').forEach(input => {
+    input.addEventListener('change', handleQuotationEditorChange);
+  });
   document.getElementById('write-quotation-pdf').addEventListener('click', writeQuotationPdf);
+  document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
+  window.addEventListener('resize', scheduleQuotationPreviewRender);
   document.getElementById('new-invoice').addEventListener('click', () => toast('Invoice creator can be wired next'));
   document.getElementById('add-party').addEventListener('click', openPartyForm);
   document.getElementById('party-close').addEventListener('click', closePartyForm);
@@ -245,6 +265,7 @@ function showView(name) {
   closeDrawer();
   applySearch();
   updateViewUrl(name);
+  if (name === 'quotation-enquiry') ensureQuotationTemplate();
 }
 
 function updateViewUrl(name) {
@@ -583,39 +604,249 @@ function renderItems() {
   `).join('');
 }
 
-function handleQuotationPdf(event) {
-  quotationPdfFile = event.target.files?.[0] || null;
+async function ensureQuotationTemplate() {
+  if (quotationPdfBytes || quotationTemplateLoadStarted) {
+    updateQuotationLivePreview();
+    return;
+  }
+
+  quotationTemplateLoadStarted = true;
+  resetQuotationPreview('Quotation paper loading...');
+  setText('quotation-file-name', 'Loading quotation paper...');
+  setText('quotation-status', 'Loading quotation paper...');
+
+  try {
+    const response = await fetch(`${DEFAULT_QUOTATION_PDF}?v=${APP_VERSION}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Template unavailable.');
+    quotationPdfBytes = await response.arrayBuffer();
+    quotationPdfFile = null;
+    quotationPdfName = DEFAULT_QUOTATION_NAME;
+    setText('quotation-file-name', DEFAULT_QUOTATION_NAME);
+    await renderQuotationPreview();
+    setText('quotation-status', 'Quotation paper ready.');
+  } catch (error) {
+    console.warn(error);
+    resetQuotationPreview('Upload a quotation PDF to preview.');
+    setText('quotation-file-name', 'No PDF selected');
+    setText('quotation-status', 'Upload a PDF to preview.');
+  } finally {
+    quotationTemplateLoadStarted = false;
+  }
+}
+
+async function handleQuotationPdf(event) {
+  const file = event.target.files?.[0] || null;
+  if (!file) return;
+
+  quotationPdfFile = file;
+  quotationPdfName = file.name;
+  quotationPdfBytes = null;
+  markQuotationDirty();
+  resetQuotationPreview('Loading PDF preview...');
+  setText('quotation-file-name', file.name);
+  setText('quotation-status', 'Loading PDF preview...');
+
+  try {
+    quotationPdfBytes = await file.arrayBuffer();
+    await renderQuotationPreview();
+    setText('quotation-status', 'PDF selected.');
+  } catch (error) {
+    console.error(error);
+    resetQuotationPreview('Unable to preview this PDF.');
+    setText('quotation-status', 'Unable to preview this PDF.');
+  }
+}
+
+function handleQuotationEditorChange() {
+  markQuotationDirty();
+  updateQuotationLivePreview();
+}
+
+function handleQuotationPageChange() {
+  markQuotationDirty();
+  renderQuotationPreview();
+}
+
+function markQuotationDirty() {
   revokeQuotationDownload();
   document.getElementById('quotation-download').classList.add('hidden');
-  setText('quotation-file-name', quotationPdfFile ? quotationPdfFile.name : 'No PDF selected');
-  setText('quotation-status', quotationPdfFile ? 'PDF selected' : '');
+}
+
+function scheduleQuotationPreviewRender() {
+  if (currentView !== 'quotation-enquiry' || !quotationPdfBytes) return;
+  window.clearTimeout(quotationResizeTimer);
+  quotationResizeTimer = window.setTimeout(renderQuotationPreview, 140);
+}
+
+async function renderQuotationPreview() {
+  const canvas = document.getElementById('quotation-preview-canvas');
+  const paper = document.getElementById('quotation-paper');
+  if (!quotationPdfBytes || !canvas || !paper) {
+    resetQuotationPreview('Upload a quotation PDF to preview.');
+    return;
+  }
+
+  if (!window.pdfjsLib?.getDocument) {
+    resetQuotationPreview('PDF preview is still loading.');
+    setText('quotation-status', 'PDF preview is still loading.');
+    return;
+  }
+
+  const renderToken = ++quotationRenderToken;
+  try {
+    const pdf = await window.pdfjsLib.getDocument({
+      data: new Uint8Array(quotationPdfBytes.slice(0)),
+      disableWorker: true
+    }).promise;
+    const pageNumber = clampNumber(safeNumber('quotation-page-number', 1), 1, pdf.numPages);
+    const page = await pdf.getPage(pageNumber);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const frame = document.getElementById('quotation-paper-frame');
+    const availableWidth = Math.max(280, (frame?.clientWidth || 780) - 24);
+    const minimumPreviewWidth = Math.min(640, baseViewport.width);
+    const targetCssWidth = Math.min(baseViewport.width, Math.max(availableWidth, minimumPreviewWidth));
+    const cssScale = targetCssWidth / baseViewport.width;
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const viewport = page.getViewport({ scale: cssScale * pixelRatio });
+    const cssWidth = Math.round(baseViewport.width * cssScale);
+    const cssHeight = Math.round(baseViewport.height * cssScale);
+
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
+    paper.style.width = `${cssWidth}px`;
+    paper.style.height = `${cssHeight}px`;
+
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: context, viewport }).promise;
+    await pdf.destroy?.();
+    if (renderToken !== quotationRenderToken) return;
+
+    quotationPreviewScale = cssScale;
+    quotationPreviewPageSize = { width: baseViewport.width, height: baseViewport.height };
+    canvas.classList.remove('hidden');
+    document.getElementById('quotation-preview-empty').classList.add('hidden');
+    updateQuotationLivePreview();
+  } catch (error) {
+    console.error(error);
+    resetQuotationPreview('Unable to preview this PDF.');
+    setText('quotation-status', 'Unable to preview this PDF.');
+  }
+}
+
+function resetQuotationPreview(message) {
+  quotationPreviewScale = 0;
+  quotationPreviewPageSize = { width: 0, height: 0 };
+  const canvas = document.getElementById('quotation-preview-canvas');
+  const input = document.getElementById('quotation-write-text');
+  const empty = document.getElementById('quotation-preview-empty');
+  if (canvas) canvas.classList.add('hidden');
+  if (input) input.style.display = 'none';
+  if (empty) {
+    empty.textContent = message;
+    empty.classList.remove('hidden');
+  }
+}
+
+function updateQuotationLivePreview() {
+  const input = document.getElementById('quotation-write-text');
+  if (!input || !quotationPreviewScale || !quotationPreviewPageSize.width) return;
+
+  const scale = quotationPreviewScale;
+  const fontSize = clampNumber(safeNumber('quotation-font-size', 48), 10, 180);
+  const style = checkedValue('quotation-font-style', 'regular');
+  const align = checkedValue('quotation-align', 'left');
+  const underline = Boolean(document.getElementById('quotation-underline')?.checked);
+  const boxX = clampNumber(safeNumber('quotation-box-x', 150), 0, Math.max(0, quotationPreviewPageSize.width - 40));
+  const boxTopFromPage = clampNumber(safeNumber('quotation-box-y', 761), 0, Math.max(0, quotationPreviewPageSize.height - fontSize));
+  const boxWidth = clampNumber(safeNumber('quotation-box-width', 2270), 40, Math.max(40, quotationPreviewPageSize.width - boxX - 12));
+  const boxHeight = clampNumber(safeNumber('quotation-box-height', 2224), fontSize * 1.5, Math.max(fontSize * 1.5, quotationPreviewPageSize.height - boxTopFromPage - 12));
+
+  input.style.display = 'block';
+  input.style.left = `${Math.round(boxX * scale)}px`;
+  input.style.top = `${Math.round(boxTopFromPage * scale)}px`;
+  input.style.width = `${Math.round(boxWidth * scale)}px`;
+  input.style.height = `${Math.round(boxHeight * scale)}px`;
+  input.style.fontSize = `${Math.max(9, fontSize * scale)}px`;
+  input.style.lineHeight = '1.28';
+  input.style.fontWeight = style.includes('bold') ? '800' : '400';
+  input.style.fontStyle = style.includes('italic') ? 'italic' : 'normal';
+  input.style.textAlign = align === 'center' ? 'center' : align;
+  input.style.color = document.getElementById('quotation-text-color')?.value || '#111827';
+  input.style.textDecorationLine = underline ? 'underline' : 'none';
 }
 
 async function writeQuotationPdf() {
-  if (!quotationPdfFile) {
-    setText('quotation-status', 'Select a PDF first.');
-    return;
-  }
-
-  const text = document.getElementById('quotation-write-text').value.trim();
-  if (!text) {
-    setText('quotation-status', 'Enter text to write.');
-    return;
-  }
-
-  if (!window.PDFLib?.PDFDocument) {
-    setText('quotation-status', 'PDF writer is still loading.');
-    return;
-  }
-
   const button = document.getElementById('write-quotation-pdf');
   button.disabled = true;
   setText('quotation-status', 'Writing PDF...');
 
   try {
+    const { blob, lineCount } = await buildQuotationPdfBlob();
+    setQuotationDownload(blob);
+    setText('quotation-status', `PDF ready · ${lineCount} line${lineCount === 1 ? '' : 's'} written`);
+  } catch (error) {
+    console.error(error);
+    setText('quotation-status', error.message || 'Unable to write on this PDF.');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function openQuotationPrintPreview() {
+  const button = document.getElementById('print-quotation-pdf');
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write('<title>NBM Print Preview</title><body style="font-family:Arial,sans-serif;padding:24px">Preparing print preview...</body>');
+  }
+
+  button.disabled = true;
+  setText('quotation-status', 'Preparing print preview...');
+
+  try {
+    const { blob } = await buildQuotationPdfBlob();
+    revokeQuotationPrintPreview();
+    quotationPrintPreviewUrl = URL.createObjectURL(blob);
+    setQuotationDownload(blob);
+
+    if (printWindow) {
+      printWindow.location.href = quotationPrintPreviewUrl;
+      window.setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch (error) {
+          // Some mobile PDF viewers expose their own print button instead.
+        }
+      }, 1200);
+      setText('quotation-status', 'Print preview opened.');
+      return;
+    }
+
+    setText('quotation-status', 'Popup blocked. Use Download PDF, then print.');
+  } catch (error) {
+    console.error(error);
+    if (printWindow) printWindow.close();
+    setText('quotation-status', error.message || 'Unable to open print preview.');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function buildQuotationPdfBlob() {
+  const sourceBytes = await getQuotationPdfBytes();
+  if (!sourceBytes) throw new Error('Select a PDF first.');
+
+  const text = document.getElementById('quotation-write-text').value;
+  if (!text.trim()) throw new Error('Enter text to write.');
+
+  if (!window.PDFLib?.PDFDocument) throw new Error('PDF writer is still loading.');
+
+  try {
     const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
-    const bytes = await quotationPdfFile.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const pdfDoc = await PDFDocument.load(sourceBytes.slice(0), { ignoreEncryption: true });
     const pages = pdfDoc.getPages();
     if (!pages.length) throw new Error('No pages found in PDF.');
 
@@ -663,22 +894,29 @@ async function writeQuotationPdf() {
       }
     });
 
-    revokeQuotationDownload();
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    quotationDownloadUrl = URL.createObjectURL(blob);
 
-    const download = document.getElementById('quotation-download');
-    download.href = quotationDownloadUrl;
-    download.download = `${quotationPdfFile.name.replace(/\.pdf$/i, '') || 'quotation'}-nbm.pdf`;
-    download.classList.remove('hidden');
-    setText('quotation-status', `PDF ready · ${lines.length} line${lines.length === 1 ? '' : 's'} written`);
+    return { blob, lineCount: lines.length };
   } catch (error) {
-    console.error(error);
-    setText('quotation-status', 'Unable to write on this PDF.');
-  } finally {
-    button.disabled = false;
+    throw error.message ? error : new Error('Unable to write on this PDF.');
   }
+}
+
+async function getQuotationPdfBytes() {
+  if (quotationPdfBytes) return quotationPdfBytes;
+  if (!quotationPdfFile) return null;
+  quotationPdfBytes = await quotationPdfFile.arrayBuffer();
+  return quotationPdfBytes;
+}
+
+function setQuotationDownload(blob) {
+  revokeQuotationDownload();
+  quotationDownloadUrl = URL.createObjectURL(blob);
+  const download = document.getElementById('quotation-download');
+  download.href = quotationDownloadUrl;
+  download.download = `${(quotationPdfName || 'quotation').replace(/\.pdf$/i, '')}-nbm.pdf`;
+  download.classList.remove('hidden');
 }
 
 function safeNumber(id, fallback) {
@@ -778,6 +1016,12 @@ function revokeQuotationDownload() {
   if (!quotationDownloadUrl) return;
   URL.revokeObjectURL(quotationDownloadUrl);
   quotationDownloadUrl = '';
+}
+
+function revokeQuotationPrintPreview() {
+  if (!quotationPrintPreviewUrl) return;
+  URL.revokeObjectURL(quotationPrintPreviewUrl);
+  quotationPrintPreviewUrl = '';
 }
 
 function renderInvoices() {
