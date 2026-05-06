@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '74';
+const APP_VERSION = '75';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -36,10 +36,10 @@ const sampleBillBooks = [
 ];
 
 const fallbackStockItems = [
-  { name: 'MS Pipe', kg: 1840 },
-  { name: 'GI Pipe', kg: 1260 },
-  { name: 'Channel', kg: 920 },
-  { name: 'Sheet', kg: 640 }
+  { name: 'MS Pipe', unit: 'Kg', hsn: '7306', gst: '18%', kg: 1840 },
+  { name: 'GI Pipe', unit: 'Kg', hsn: '7306', gst: '18%', kg: 1260 },
+  { name: 'Channel', unit: 'Kg', hsn: '7216', gst: '18%', kg: 920 },
+  { name: 'Sheet', unit: 'Kg', hsn: '7210', gst: '18%', kg: 640 }
 ];
 
 const fallbackParties = [
@@ -79,7 +79,7 @@ const titles = {
   settings: ['NBM', 'New Bombay Metal']
 };
 
-let state = { transactions: [], customers: [], business: {} };
+let state = { transactions: [], customers: [], business: {}, items: [], itemMasters: [], stock: [], stockItems: [], inventory: [], catalog: [] };
 let currentView = 'dashboard';
 let deferredInstallPrompt = null;
 let serviceWorkerRegistration = null;
@@ -198,7 +198,13 @@ function loadState() {
     state = {
       transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
       customers: Array.isArray(parsed.customers) ? parsed.customers : [],
-      business: parsed.business || {}
+      business: parsed.business || {},
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+      itemMasters: Array.isArray(parsed.itemMasters) ? parsed.itemMasters : [],
+      stock: Array.isArray(parsed.stock) ? parsed.stock : [],
+      stockItems: Array.isArray(parsed.stockItems) ? parsed.stockItems : [],
+      inventory: Array.isArray(parsed.inventory) ? parsed.inventory : [],
+      catalog: Array.isArray(parsed.catalog) ? parsed.catalog : []
     };
   } catch (error) {
     console.warn('Unable to load local data', error);
@@ -612,25 +618,89 @@ function renderParties() {
 
 function renderItems() {
   const list = document.getElementById('item-list');
-  const items = stockSummaryItems();
+  const items = itemMasterItems();
 
   if (!items.length) {
     list.innerHTML = '<div class="empty-state">No items found.</div>';
     return;
   }
 
-  list.innerHTML = items.map(item => `
-    <article class="data-row searchable-item" data-search="${escapeAttr(`${item.name} ${item.kg} kg stock item material`)}">
-      <div class="data-main">
-        <div class="data-icon">${escapeHtml(initials(item.name))}</div>
-        <div>
-          <h4>${escapeHtml(item.name)}</h4>
-          <p>Stock item · ${formatNumber(item.kg)} kg available</p>
+  list.innerHTML = `
+    <div class="item-grid item-header" aria-hidden="true">
+      <span>Item Name</span>
+      <span>Unit</span>
+      <span>HSN</span>
+      <span>GST</span>
+    </div>
+    ${items.map(item => `
+      <article class="data-row item-row searchable-item" data-search="${escapeAttr(`${item.name} ${item.unit} ${item.hsn} ${item.gst} item hsn gst unit`)}">
+        <div class="item-grid">
+          <div class="item-name-cell">
+            <div class="data-icon">${escapeHtml(initials(item.name))}</div>
+            <strong>${escapeHtml(item.name)}</strong>
+          </div>
+          <div class="item-value-cell">
+            <span class="item-meta-label">Unit</span>
+            <span class="item-value">${escapeHtml(item.unit)}</span>
+          </div>
+          <div class="item-value-cell">
+            <span class="item-meta-label">HSN</span>
+            <span class="item-value">${escapeHtml(item.hsn)}</span>
+          </div>
+          <div class="item-value-cell">
+            <span class="item-meta-label">GST</span>
+            <span class="item-value item-gst">${escapeHtml(item.gst)}</span>
+          </div>
         </div>
-      </div>
-      <strong class="data-amount">${formatNumber(item.kg)} kg</strong>
-    </article>
-  `).join('');
+      </article>
+    `).join('')}
+  `;
+}
+
+function itemMasterItems() {
+  const explicit = [
+    ...arrayFromState('items'),
+    ...arrayFromState('itemMasters'),
+    ...arrayFromState('stock'),
+    ...arrayFromState('stockItems'),
+    ...arrayFromState('inventory'),
+    ...arrayFromState('catalog')
+  ].map(normalizeItemMaster).filter(item => item.name);
+
+  return (explicit.length ? mergeItemMasters(explicit) : fallbackStockItems.map(normalizeItemMaster)).slice(0, 60);
+}
+
+function normalizeItemMaster(item) {
+  const name = item.name || item.productName || item.itemName || item.description || 'Material';
+  const unit = item.unit || item.uom || item.unitName || item.measurementUnit || item.measurement || 'Kg';
+  const hsn = item.hsn || item.hsnCode || item.hsnSac || item.sac || item.hsnNumber || '-';
+  const gst = formatGstRate(item.gst ?? item.gstRate ?? item.taxRate ?? item.tax ?? item.igst ?? '18%');
+  return {
+    name: String(name).trim(),
+    unit: String(unit).trim() || '-',
+    hsn: String(hsn).trim() || '-',
+    gst
+  };
+}
+
+function mergeItemMasters(items) {
+  const itemMap = new Map();
+  items.forEach(item => {
+    const key = item.name.toLowerCase();
+    if (!itemMap.has(key)) itemMap.set(key, item);
+  });
+  return Array.from(itemMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function formatGstRate(value) {
+  if (value == null || value === '') return '-';
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return '-';
+    return trimmed.includes('%') ? trimmed : `${trimmed}%`;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? `${number}%` : '-';
 }
 
 async function ensureQuotationTemplate() {

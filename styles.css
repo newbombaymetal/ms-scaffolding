@@ -902,6 +902,59 @@ body.compact-quotation-view .mobile-menu {
   white-space: nowrap;
 }
 
+.item-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(82px, 0.7fr) minmax(96px, 0.75fr) minmax(76px, 0.65fr);
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.item-header {
+  padding: 0 16px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.item-row {
+  display: block;
+}
+
+.item-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.item-name-cell strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.item-value-cell {
+  min-width: 0;
+}
+
+.item-meta-label {
+  display: none;
+}
+
+.item-value {
+  color: var(--soft);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.item-gst {
+  color: var(--green);
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
@@ -2094,6 +2147,39 @@ body.quotation-controls-hidden .quotation-studio {
   .section-toolbar > *,
   .data-main {
     width: 100%;
+  }
+
+  .item-header {
+    display: none;
+  }
+
+  .item-row {
+    padding: 16px;
+  }
+
+  .item-row .item-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .item-name-cell {
+    grid-column: 1 / -1;
+  }
+
+  .item-value-cell {
+    padding: 11px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .item-meta-label {
+    display: block;
+    margin-bottom: 4px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .hero-columns {
