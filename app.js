@@ -1,11 +1,11 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '67';
+const APP_VERSION = '68';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
 const DEFAULT_QUOTATION_PDF = './assets/nbm-quotation-template.pdf';
-const DEFAULT_QUOTATION_NAME = 'NBM Quotation Paper-nbm.pdf';
+const DEFAULT_QUOTATION_NAME = 'NBM Quotation Paper.pdf';
 let lockedPageScrollY = 0;
 let gstFetchInProgress = false;
 let quotationPdfFile = null;
@@ -260,9 +260,9 @@ function showInitialView() {
 
 function showView(name) {
   currentView = name;
-  document.body.classList.toggle('compact-quotation-view', name === 'quotation-enquiry');
-  document.body.classList.toggle('quotation-controls-hidden', false);
-  setText('quotation-controls-toggle', 'Hide Format');
+  const isQuotation = name === 'quotation-enquiry';
+  document.body.classList.toggle('compact-quotation-view', isQuotation);
+  setQuotationControlsHidden(isQuotation && isMobileQuotationLayout());
   const [title, subtitle] = titles[name] || titles.dashboard;
   setText('view-title', title);
   setText('view-subtitle', subtitle);
@@ -686,9 +686,17 @@ function handleQuotationColorChange(event) {
 }
 
 function toggleQuotationControls() {
-  const hidden = document.body.classList.toggle('quotation-controls-hidden');
-  setText('quotation-controls-toggle', hidden ? 'Show Format' : 'Hide Format');
+  setQuotationControlsHidden(!document.body.classList.contains('quotation-controls-hidden'));
   window.setTimeout(scheduleQuotationPreviewRender, 60);
+}
+
+function setQuotationControlsHidden(hidden) {
+  document.body.classList.toggle('quotation-controls-hidden', hidden);
+  setText('quotation-controls-toggle', hidden ? 'Show Format' : 'Hide Format');
+}
+
+function isMobileQuotationLayout() {
+  return window.matchMedia?.('(max-width: 860px)').matches;
 }
 
 function keepActiveQuotationTextVisible() {
@@ -905,14 +913,9 @@ function handleQuotationPaperPointerDown(event) {
 
   event.preventDefault();
   if (quotationEditorHasText(input)) {
-    if (quotationGuidesVisible && quotationHasTextSelection(input)) {
-      setQuotationTypingPosition(cssX / quotationPreviewScale, cssY / quotationPreviewScale, input);
-      setText('quotation-status', 'Active text block moved.');
-    } else {
-      input = createQuotationEditorBlock();
-      setQuotationTypingPosition(cssX / quotationPreviewScale, cssY / quotationPreviewScale, input);
-      setText('quotation-status', 'New typing place ready.');
-    }
+    input = createQuotationEditorBlock();
+    setQuotationTypingPosition(cssX / quotationPreviewScale, cssY / quotationPreviewScale, input);
+    setText('quotation-status', 'New typing place ready.');
   } else {
     setActiveQuotationEditor(input);
     setQuotationTypingPosition(cssX / quotationPreviewScale, cssY / quotationPreviewScale, input);
@@ -939,7 +942,7 @@ function handleQuotationAction(event) {
     quotationGuidesVisible = !quotationGuidesVisible;
     event.currentTarget.classList.toggle('active', quotationGuidesVisible);
     updateQuotationLivePreview();
-    setText('quotation-status', quotationGuidesVisible ? 'Move mode on. Select a text block, then tap the PDF to move it.' : 'Move mode off. Blank taps create new typing places.');
+    setText('quotation-status', quotationGuidesVisible ? 'Alignment guides on for the active text block.' : 'Alignment guides off. Blank taps create new typing places.');
     return;
   }
 
@@ -1071,7 +1074,7 @@ async function renderQuotationPreview() {
     const baseViewport = page.getViewport({ scale: 1 });
     const frame = document.getElementById('quotation-paper-frame');
     const availableWidth = Math.max(280, (frame?.clientWidth || 780) - 24);
-    const minimumPreviewWidth = Math.min(640, baseViewport.width);
+    const minimumPreviewWidth = isMobileQuotationLayout() ? availableWidth : Math.min(640, baseViewport.width);
     const targetCssWidth = Math.min(baseViewport.width, Math.max(availableWidth, minimumPreviewWidth));
     const cssScale = targetCssWidth / baseViewport.width;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
