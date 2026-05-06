@@ -1,14 +1,14 @@
 /* NBM — service worker for offline cache. */
-const APP_VERSION = '73';
+const APP_VERSION = '74';
 const CACHE = `nbm-v${APP_VERSION}`;
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=73',
-  './app.js?v=73',
-  './manifest.json?v=73',
+  './styles.css?v=74',
+  './app.js?v=74',
+  './manifest.json?v=74',
   './version.json',
-  './assets/nbm-quotation-template.pdf?v=73',
+  './assets/nbm-quotation-template.pdf?v=74',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -44,13 +44,13 @@ self.addEventListener('fetch', (e) => {
 
   if (e.request.mode === 'navigate') {
     e.respondWith(
-      caches.match('./index.html').then(hit =>
-        hit || fetch(e.request).then(res => {
+      fetch(e.request).then(res => {
+        if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put('./index.html', copy)).catch(() => {});
-          return res;
-        })
-      )
+        }
+        return res;
+      }).catch(() => caches.match('./index.html'))
     );
     return;
   }
