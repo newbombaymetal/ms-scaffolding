@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '68';
+const APP_VERSION = '69';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -20,8 +20,9 @@ let quotationTemplateLoadStarted = false;
 let quotationResizeTimer = null;
 let quotationGuidesVisible = false;
 let quotationSavedRange = null;
-let quotationActiveEditorId = 'quotation-write-text';
+let quotationActiveEditorId = '';
 let quotationEditorCounter = 1;
+let quotationZoomLevel = 1;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -222,9 +223,12 @@ function wireEvents() {
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
   document.getElementById('add-item').addEventListener('click', () => toast('Add item flow ready'));
   document.getElementById('quotation-pdf').addEventListener('change', handleQuotationPdf);
-  document.getElementById('quotation-paper').addEventListener('pointerdown', handleQuotationPaperPointerDown);
+  document.getElementById('quotation-paper').addEventListener('click', handleQuotationPaperClick);
   const quotationEditor = document.getElementById('quotation-write-text');
   setupQuotationEditor(quotationEditor);
+  document.getElementById('quotation-zoom-in').addEventListener('click', () => changeQuotationZoom(0.15));
+  document.getElementById('quotation-zoom-out').addEventListener('click', () => changeQuotationZoom(-0.15));
+  document.getElementById('quotation-zoom-reset').addEventListener('click', resetQuotationZoom);
   document.addEventListener('selectionchange', handleQuotationSelectionChange);
   document.getElementById('quotation-page-number').addEventListener('input', handleQuotationPageChange);
   document.getElementById('quotation-text-color').addEventListener('input', handleQuotationColorChange);
@@ -707,6 +711,18 @@ function keepActiveQuotationTextVisible() {
   });
 }
 
+function setQuotationEditorEditable(editor, editable) {
+  if (!editor) return;
+  editor.contentEditable = editable ? 'true' : 'false';
+  editor.dataset.editable = editable ? 'true' : 'false';
+}
+
+function syncQuotationEditorEditability(activeEditor = quotationEditorElement()) {
+  quotationEditorElements().forEach(editor => {
+    setQuotationEditorEditable(editor, editor === activeEditor);
+  });
+}
+
 function setupQuotationEditor(editor) {
   if (!editor || editor.dataset.quotationBound === 'true') return;
   editor.dataset.quotationBound = 'true';
@@ -716,9 +732,12 @@ function setupQuotationEditor(editor) {
   editor.dataset.boxY = editor.dataset.boxY || document.getElementById('quotation-box-y')?.value || '761';
   editor.dataset.boxWidth = editor.dataset.boxWidth || document.getElementById('quotation-box-width')?.value || '2270';
   editor.dataset.boxHeight = editor.dataset.boxHeight || document.getElementById('quotation-box-height')?.value || '2224';
+  setQuotationEditorEditable(editor, editor.id === quotationActiveEditorId);
   editor.addEventListener('input', handleQuotationEditorChange);
   editor.addEventListener('focus', () => setActiveQuotationEditor(editor, true));
-  editor.addEventListener('pointerdown', () => setActiveQuotationEditor(editor, true));
+  editor.addEventListener('click', event => {
+    activateQuotationEditor(editor, { keepSelection: true, clientX: event.clientX, clientY: event.clientY });
+  });
   editor.addEventListener('keyup', saveQuotationSelection);
   editor.addEventListener('pointerup', saveQuotationSelection);
   editor.addEventListener('blur', saveQuotationSelection);
@@ -742,6 +761,7 @@ function setActiveQuotationEditor(editor, keepSelection = false) {
   setupQuotationEditor(editor);
   quotationActiveEditorId = editor.id;
   if (!keepSelection) quotationSavedRange = null;
+  syncQuotationEditorEditability(editor);
   syncQuotationBoxInputsFromEditor(editor);
   refreshQuotationToolbarState();
 }
@@ -751,7 +771,7 @@ function createQuotationEditorBlock() {
   const editor = document.createElement('div');
   editor.className = 'quotation-live-input';
   editor.id = `quotation-write-text-${quotationEditorCounter}`;
-  editor.contentEditable = 'true';
+  editor.contentEditable = 'false';
   editor.setAttribute('role', 'textbox');
   editor.setAttribute('aria-label', 'Type on quotation paper');
   editor.dataset.fontSize = String(safeNumber('quotation-font-size', 48));
@@ -761,6 +781,39 @@ function createQuotationEditorBlock() {
   setupQuotationEditor(editor);
   setActiveQuotationEditor(editor);
   return editor;
+}
+
+function placeQuotationCaretFromPoint(editor, clientX, clientY) {
+  if (!editor || clientX == null || clientY == null) return false;
+  const selection = window.getSelection?.();
+  if (!selection) return false;
+
+  let range = null;
+  if (document.caretRangeFromPoint) {
+    range = document.caretRangeFromPoint(clientX, clientY);
+  } else if (document.caretPositionFromPoint) {
+    const caret = document.caretPositionFromPoint(clientX, clientY);
+    if (caret) {
+      range = document.createRange();
+      range.setStart(caret.offsetNode, caret.offset);
+      range.collapse(true);
+    }
+  }
+
+  if (!range || !editor.contains(range.startContainer)) return false;
+  selection.removeAllRanges();
+  selection.addRange(range);
+  quotationSavedRange = range.cloneRange();
+  return true;
+}
+
+function activateQuotationEditor(editor, options = {}) {
+  if (!editor) return;
+  const { keepSelection = false, clientX = null, clientY = null } = options;
+  setActiveQuotationEditor(editor, keepSelection);
+  editor.focus({ preventScroll: true });
+  if (placeQuotationCaretFromPoint(editor, clientX, clientY)) return;
+  restoreQuotationSelection();
 }
 
 function quotationEditorFontSize(editor = quotationEditorElement()) {
@@ -896,12 +949,12 @@ function syncQuotationToolbarFromSelection() {
   document.getElementById('quotation-align').value = align;
 }
 
-function handleQuotationPaperPointerDown(event) {
+function handleQuotationPaperClick(event) {
   if (!quotationPreviewScale || !quotationPreviewPageSize.width) return;
   let input = quotationEditorElement();
   const tappedEditor = quotationEditorFromNode(event.target);
   if (tappedEditor) {
-    setActiveQuotationEditor(tappedEditor, true);
+    activateQuotationEditor(tappedEditor, { keepSelection: true, clientX: event.clientX, clientY: event.clientY });
     return;
   }
 
@@ -923,7 +976,7 @@ function handleQuotationPaperPointerDown(event) {
 
   markQuotationDirty();
   updateQuotationLivePreview();
-  input.focus({ preventScroll: true });
+  activateQuotationEditor(input, { clientX: event.clientX, clientY: event.clientY });
 }
 
 function handleQuotationAction(event) {
@@ -1049,6 +1102,50 @@ function scheduleQuotationPreviewRender() {
   quotationResizeTimer = window.setTimeout(renderQuotationPreview, 140);
 }
 
+function updateQuotationZoomReadout() {
+  setText('quotation-zoom-reset', `${Math.round(quotationZoomLevel * 100)}%`);
+}
+
+function captureQuotationViewport() {
+  const frame = document.getElementById('quotation-paper-frame');
+  if (!frame) return null;
+  const maxLeft = Math.max(1, frame.scrollWidth - frame.clientWidth);
+  const maxTop = Math.max(1, frame.scrollHeight - frame.clientHeight);
+  return {
+    leftRatio: frame.scrollLeft / maxLeft,
+    topRatio: frame.scrollTop / maxTop
+  };
+}
+
+function restoreQuotationViewport(viewport) {
+  if (!viewport) return;
+  const frame = document.getElementById('quotation-paper-frame');
+  if (!frame) return;
+  window.requestAnimationFrame(() => {
+    const maxLeft = Math.max(0, frame.scrollWidth - frame.clientWidth);
+    const maxTop = Math.max(0, frame.scrollHeight - frame.clientHeight);
+    frame.scrollLeft = maxLeft * viewport.leftRatio;
+    frame.scrollTop = maxTop * viewport.topRatio;
+  });
+}
+
+function changeQuotationZoom(delta) {
+  const nextZoom = clampNumber(Math.round((quotationZoomLevel + delta) * 100) / 100, 0.6, 2.5);
+  if (nextZoom === quotationZoomLevel) return;
+  const viewport = captureQuotationViewport();
+  quotationZoomLevel = nextZoom;
+  updateQuotationZoomReadout();
+  renderQuotationPreview().then(() => restoreQuotationViewport(viewport));
+}
+
+function resetQuotationZoom() {
+  if (quotationZoomLevel === 1) return;
+  const viewport = captureQuotationViewport();
+  quotationZoomLevel = 1;
+  updateQuotationZoomReadout();
+  renderQuotationPreview().then(() => restoreQuotationViewport(viewport));
+}
+
 async function renderQuotationPreview() {
   const canvas = document.getElementById('quotation-preview-canvas');
   const paper = document.getElementById('quotation-paper');
@@ -1075,7 +1172,8 @@ async function renderQuotationPreview() {
     const frame = document.getElementById('quotation-paper-frame');
     const availableWidth = Math.max(280, (frame?.clientWidth || 780) - 24);
     const minimumPreviewWidth = isMobileQuotationLayout() ? availableWidth : Math.min(640, baseViewport.width);
-    const targetCssWidth = Math.min(baseViewport.width, Math.max(availableWidth, minimumPreviewWidth));
+    const fitWidth = Math.min(baseViewport.width, Math.max(availableWidth, minimumPreviewWidth));
+    const targetCssWidth = Math.max(220, fitWidth * quotationZoomLevel);
     const cssScale = targetCssWidth / baseViewport.width;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
     const viewport = page.getViewport({ scale: cssScale * pixelRatio });
@@ -1097,6 +1195,7 @@ async function renderQuotationPreview() {
 
     quotationPreviewScale = cssScale;
     quotationPreviewPageSize = { width: baseViewport.width, height: baseViewport.height };
+    updateQuotationZoomReadout();
     canvas.classList.remove('hidden');
     document.getElementById('quotation-preview-empty').classList.add('hidden');
     updateQuotationLivePreview();
@@ -1121,6 +1220,7 @@ function resetQuotationPreview(message) {
     empty.textContent = message;
     empty.classList.remove('hidden');
   }
+  updateQuotationZoomReadout();
 }
 
 function updateQuotationLivePreview() {

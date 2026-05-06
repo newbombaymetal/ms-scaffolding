@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="68">
+  <meta name="app-version" content="69">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NBM">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="manifest" href="manifest.json?v=68">
+  <link rel="manifest" href="manifest.json?v=69">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=68">
+  <link rel="stylesheet" href="styles.css?v=69">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -213,12 +213,17 @@
                 </label>
                 <input class="file-input" id="quotation-pdf" type="file" accept="application/pdf">
                 <span class="file-name" id="quotation-file-name">Loading quotation paper...</span>
+                <div class="quotation-zoom-controls" aria-label="Quotation zoom controls">
+                  <button class="quotation-zoom-button" id="quotation-zoom-out" type="button" aria-label="Zoom out">-</button>
+                  <button class="quotation-zoom-readout" id="quotation-zoom-reset" type="button" aria-label="Reset zoom">100%</button>
+                  <button class="quotation-zoom-button" id="quotation-zoom-in" type="button" aria-label="Zoom in">+</button>
+                </div>
               </div>
 
               <div class="quotation-paper-frame" id="quotation-paper-frame">
                 <div class="quotation-paper" id="quotation-paper">
                   <canvas class="quotation-preview-canvas" id="quotation-preview-canvas" aria-label="Quotation PDF preview"></canvas>
-                  <div class="quotation-live-input" id="quotation-write-text" contenteditable="true" role="textbox" aria-label="Type on quotation paper"></div>
+                  <div class="quotation-live-input" id="quotation-write-text" contenteditable="false" role="textbox" aria-label="Type on quotation paper"></div>
                   <div class="quotation-guide-layer" id="quotation-guide-layer" aria-hidden="true">
                     <span class="quotation-guide quotation-guide-vertical" id="quotation-guide-vertical"></span>
                     <span class="quotation-guide quotation-guide-horizontal" id="quotation-guide-horizontal"></span>
@@ -454,6 +459,6 @@
   <div class="toast hidden" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="app.js?v=68"></script>
+  <script src="app.js?v=69"></script>
 </body>
 </html>
