@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '66';
+const APP_VERSION = '67';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -234,6 +234,7 @@ function wireEvents() {
   document.querySelectorAll('button[data-quotation-action], button[data-quotation-toggle], button[data-quotation-align]').forEach(button => {
     button.addEventListener('pointerdown', preserveQuotationSelectionOnTool);
   });
+  document.getElementById('quotation-controls-toggle').addEventListener('click', toggleQuotationControls);
   document.getElementById('write-quotation-pdf').addEventListener('click', writeQuotationPdf);
   document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
   window.addEventListener('resize', scheduleQuotationPreviewRender);
@@ -260,6 +261,8 @@ function showInitialView() {
 function showView(name) {
   currentView = name;
   document.body.classList.toggle('compact-quotation-view', name === 'quotation-enquiry');
+  document.body.classList.toggle('quotation-controls-hidden', false);
+  setText('quotation-controls-toggle', 'Hide Format');
   const [title, subtitle] = titles[name] || titles.dashboard;
   setText('view-title', title);
   setText('view-subtitle', subtitle);
@@ -670,6 +673,7 @@ function handleQuotationEditorChange() {
   markQuotationDirty();
   refreshQuotationToolbarState();
   updateQuotationLivePreview();
+  keepActiveQuotationTextVisible();
 }
 
 function handleQuotationPageChange() {
@@ -679,6 +683,20 @@ function handleQuotationPageChange() {
 
 function handleQuotationColorChange(event) {
   runQuotationCommand('foreColor', event.target.value || '#111827');
+}
+
+function toggleQuotationControls() {
+  const hidden = document.body.classList.toggle('quotation-controls-hidden');
+  setText('quotation-controls-toggle', hidden ? 'Show Format' : 'Hide Format');
+  window.setTimeout(scheduleQuotationPreviewRender, 60);
+}
+
+function keepActiveQuotationTextVisible() {
+  const editor = quotationEditorElement();
+  if (!editor || document.activeElement !== editor) return;
+  window.requestAnimationFrame(() => {
+    editor.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
 }
 
 function setupQuotationEditor(editor) {
@@ -1111,19 +1129,39 @@ function updateQuotationLivePreview() {
   quotationEditorElements().forEach(input => {
     setupQuotationEditor(input);
     const fontSize = quotationEditorFontSize(input);
-    const box = quotationEditorBox(input);
+    let box = quotationEditorBox(input);
     const cssLineHeight = Math.max(14, fontSize * scale * 1.28);
     const textLines = Math.max(1, quotationEditorText(input).split('\n').length);
-    const cssHeight = Math.min(box.height * scale, Math.max(cssLineHeight * 1.6, Math.min(cssLineHeight * (textLines + 1) + 10, 260)));
 
     input.style.display = 'block';
     input.style.left = `${Math.round(box.x * scale)}px`;
     input.style.top = `${Math.round(box.y * scale)}px`;
     input.style.width = `${Math.round(box.width * scale)}px`;
-    input.style.height = `${Math.round(cssHeight)}px`;
+    input.style.height = 'auto';
+    input.style.minHeight = `${Math.round(cssLineHeight * 1.6)}px`;
     input.style.fontSize = `${Math.max(9, fontSize * scale)}px`;
     input.style.lineHeight = '1.28';
     input.style.color = document.getElementById('quotation-text-color')?.value || '#111827';
+
+    const neededCssHeight = Math.max(cssLineHeight * 1.6, cssLineHeight * (textLines + 1) + 10, input.scrollHeight + 8);
+    let availableCssHeight = Math.max(cssLineHeight * 1.6, (quotationPreviewPageSize.height - box.y - 8) * scale);
+    if (neededCssHeight > availableCssHeight && box.y > 8) {
+      const shiftPdf = Math.ceil((neededCssHeight - availableCssHeight) / scale);
+      const nextY = clampNumber(box.y - shiftPdf, 8, box.y);
+      if (nextY !== box.y) {
+        setQuotationEditorBox(input, {
+          x: box.x,
+          y: nextY,
+          width: box.width,
+          height: Math.max(box.height, quotationPreviewPageSize.height - nextY - 8)
+        });
+        box = quotationEditorBox(input);
+        availableCssHeight = Math.max(cssLineHeight * 1.6, (quotationPreviewPageSize.height - box.y - 8) * scale);
+        input.style.top = `${Math.round(box.y * scale)}px`;
+      }
+    }
+    const cssHeight = Math.min(neededCssHeight, availableCssHeight);
+    input.style.height = `${Math.round(cssHeight)}px`;
 
     if (input.id === quotationActiveEditorId) {
       activeGuideBox = { cssX: box.x * scale, cssY: box.y * scale, cssWidth: box.width * scale, cssHeight, pdfX: box.x, pdfY: box.y };
