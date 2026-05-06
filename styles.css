@@ -347,6 +347,22 @@ svg {
   margin-top: 24px;
 }
 
+body.compact-quotation-view .topbar {
+  display: none;
+}
+
+body.compact-quotation-view .content {
+  padding-top: calc(14px + var(--safe-top));
+}
+
+body.compact-quotation-view .view-panel {
+  margin-top: 0;
+}
+
+body.compact-quotation-view .mobile-menu {
+  display: none;
+}
+
 .hero-card,
 .panel,
 .stat-card,
@@ -1714,6 +1730,18 @@ svg {
 
   .content {
     padding: calc(var(--mobile-fixed-header) + 8px) 16px calc(24px + var(--safe-bottom));
+  }
+
+  body.compact-quotation-view::before {
+    height: calc(28px + var(--safe-top));
+  }
+
+  body.compact-quotation-view .content {
+    padding: calc(10px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
+  }
+
+  body.compact-quotation-view .mobile-menu {
+    display: none;
   }
 
   .topbar {

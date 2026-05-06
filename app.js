@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '65';
+const APP_VERSION = '66';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -259,6 +259,7 @@ function showInitialView() {
 
 function showView(name) {
   currentView = name;
+  document.body.classList.toggle('compact-quotation-view', name === 'quotation-enquiry');
   const [title, subtitle] = titles[name] || titles.dashboard;
   setText('view-title', title);
   setText('view-subtitle', subtitle);
