@@ -1094,6 +1094,14 @@ svg {
   overflow: hidden;
   background: #ffffff;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  touch-action: pan-x pan-y;
+}
+
+.quotation-paper.guides-active {
+  background-image:
+    linear-gradient(rgba(14, 165, 233, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .quotation-preview-canvas {
@@ -1120,7 +1128,7 @@ svg {
 
 .quotation-live-input {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   display: none;
   min-width: 0;
   border: 0;
@@ -1140,6 +1148,191 @@ svg {
 .quotation-live-input:focus {
   background: rgba(91, 229, 255, 0.04);
   box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.32);
+}
+
+.quotation-guide-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: none;
+  pointer-events: none;
+}
+
+.quotation-guide-layer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(14, 165, 233, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.quotation-guide {
+  position: absolute;
+  background: rgba(14, 165, 233, 0.86);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.65);
+}
+
+.quotation-guide-vertical {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.quotation-guide-horizontal {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.quotation-guide-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #0284c7;
+  border-radius: 999px;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+}
+
+.quotation-guide-badge {
+  position: absolute;
+  max-width: 120px;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #082f49;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(8, 47, 73, 0.16);
+}
+
+.quotation-format-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.quotation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border-radius: 999px;
+  padding: 8px;
+  color: #020617;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
+}
+
+.quotation-toolbar.wide-toolbar {
+  gap: 8px;
+}
+
+.quotation-tool {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #020617;
+  background: transparent;
+  font-weight: 950;
+  text-decoration: none;
+  transition: background 0.16s ease, transform 0.16s ease, color 0.16s ease;
+}
+
+.quotation-tool:hover,
+.quotation-tool.active {
+  background: rgba(2, 6, 23, 0.08);
+}
+
+.quotation-tool:active {
+  transform: scale(0.96);
+}
+
+.quotation-tool svg {
+  width: 32px;
+  height: 32px;
+  stroke-width: 2.6;
+}
+
+.tool-aa {
+  font-size: 32px;
+  font-weight: 950;
+  letter-spacing: -1px;
+}
+
+.text-mark {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.text-mark.italic {
+  font-style: italic;
+}
+
+.text-mark.underline {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.text-mark.strike {
+  text-decoration: line-through;
+}
+
+.quotation-color-tool svg {
+  width: 36px;
+  height: 36px;
+}
+
+.color-dot {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #111827;
+  box-shadow: 0 0 0 1px rgba(2, 6, 23, 0.22);
+}
+
+.quotation-size-pill {
+  min-width: 42px;
+  border-radius: 999px;
+  padding: 8px 10px;
+  text-align: center;
+  color: #020617;
+  background: rgba(2, 6, 23, 0.08);
+  font-weight: 950;
+}
+
+.quotation-page-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--soft);
+  font-weight: 800;
+}
+
+.quotation-page-control input {
+  width: 84px;
+  min-width: 0;
+  color: var(--text);
+  outline: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .quotation-grid {
@@ -1636,6 +1829,32 @@ svg {
 
   .quotation-paper {
     min-height: 420px;
+  }
+
+  .quotation-toolbar {
+    gap: 4px;
+    padding: 7px;
+  }
+
+  .quotation-tool {
+    width: 42px;
+    height: 42px;
+  }
+
+  .quotation-tool svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tool-aa,
+  .text-mark {
+    font-size: 28px;
+  }
+
+  .quotation-size-pill {
+    min-width: 36px;
+    padding: 7px 8px;
+    font-size: 13px;
   }
 
   .quotation-grid {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="61">
+  <meta name="app-version" content="62">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NBM">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="manifest" href="manifest.json?v=61">
+  <link rel="manifest" href="manifest.json?v=62">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=61">
+  <link rel="stylesheet" href="styles.css?v=62">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -218,69 +218,76 @@
                 <div class="quotation-paper" id="quotation-paper">
                   <canvas class="quotation-preview-canvas" id="quotation-preview-canvas" aria-label="Quotation PDF preview"></canvas>
                   <textarea class="quotation-live-input" id="quotation-write-text" rows="4" aria-label="Type on quotation paper" placeholder="Type here"></textarea>
+                  <div class="quotation-guide-layer" id="quotation-guide-layer" aria-hidden="true">
+                    <span class="quotation-guide quotation-guide-vertical" id="quotation-guide-vertical"></span>
+                    <span class="quotation-guide quotation-guide-horizontal" id="quotation-guide-horizontal"></span>
+                    <span class="quotation-guide-dot" id="quotation-guide-dot"></span>
+                    <span class="quotation-guide-badge" id="quotation-guide-badge">0, 0</span>
+                  </div>
                   <div class="quotation-preview-empty" id="quotation-preview-empty">Quotation paper loading...</div>
                 </div>
               </div>
             </div>
 
             <div class="quotation-controls">
-              <div class="quotation-grid">
-                <div class="form-field wide">
-                  <span>Font Style</span>
-                  <div class="format-cards four" role="radiogroup" aria-label="Font Style">
-                    <label class="format-card">
-                      <input type="radio" name="quotation-font-style" value="regular" checked>
-                      <b>Regular</b>
-                    </label>
-                    <label class="format-card">
-                      <input type="radio" name="quotation-font-style" value="bold">
-                      <b>Bold</b>
-                    </label>
-                    <label class="format-card">
-                      <input type="radio" name="quotation-font-style" value="italic">
-                      <b>Italic</b>
-                    </label>
-                    <label class="format-card">
-                      <input type="radio" name="quotation-font-style" value="bold-italic">
-                      <b>Bold Italic</b>
-                    </label>
-                  </div>
+              <div class="quotation-format-stack">
+                <div class="quotation-toolbar">
+                  <button class="quotation-tool active" id="quotation-text-tool" type="button" data-quotation-action="focus" aria-label="Text">
+                    <span class="tool-aa">Aa</span>
+                  </button>
+                  <button class="quotation-tool" type="button" data-quotation-action="bullet" aria-label="Insert bullet">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2"/><circle cx="6" cy="17" r="2"/><path d="M11 7h9M11 17h9"/></svg>
+                  </button>
+                  <button class="quotation-tool active" id="quotation-guides-tool" type="button" data-quotation-action="guides" aria-label="Alignment guides">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 10h16M4 16h16M10 4v16M16 4v16"/></svg>
+                  </button>
+                  <label class="quotation-tool" for="quotation-pdf" aria-label="Upload PDF">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66L9.64 17.2a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg>
+                  </label>
+                  <label class="quotation-tool quotation-color-tool" for="quotation-text-color" aria-label="Text color">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m9 16 4.5-10 4.5 10"/><path d="M10.4 13h6.2"/></svg>
+                    <span class="color-dot" id="quotation-color-dot"></span>
+                  </label>
                 </div>
-                <div class="form-field wide">
-                  <span>Text Align</span>
-                  <div class="format-cards three" role="radiogroup" aria-label="Text Align">
-                    <label class="format-card">
-                      <input type="radio" name="quotation-align" value="left" checked>
-                      <b>Left</b>
-                    </label>
-                    <label class="format-card">
-                      <input type="radio" name="quotation-align" value="center">
-                      <b>Middle</b>
-                    </label>
-                    <label class="format-card">
-                      <input type="radio" name="quotation-align" value="right">
-                      <b>Right</b>
-                    </label>
-                  </div>
+
+                <div class="quotation-toolbar">
+                  <button class="quotation-tool text-mark" id="quotation-bold-tool" type="button" data-quotation-toggle="bold" aria-label="Bold">B</button>
+                  <button class="quotation-tool text-mark italic" id="quotation-italic-tool" type="button" data-quotation-toggle="italic" aria-label="Italic">I</button>
+                  <button class="quotation-tool text-mark underline" id="quotation-underline-tool" type="button" data-quotation-toggle="underline" aria-label="Underline">U</button>
+                  <button class="quotation-tool text-mark strike" id="quotation-strike-tool" type="button" data-quotation-toggle="strike" aria-label="Strikethrough">S</button>
                 </div>
-                <label class="form-field">
-                  <span>Page No.</span>
+
+                <div class="quotation-toolbar wide-toolbar">
+                  <button class="quotation-tool active" type="button" data-quotation-align="left" aria-label="Align left">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h14M4 10h10M4 14h14M4 18h9"/></svg>
+                  </button>
+                  <button class="quotation-tool" type="button" data-quotation-align="center" aria-label="Align middle">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M8 10h8M5 14h14M8 18h8"/></svg>
+                  </button>
+                  <button class="quotation-tool" type="button" data-quotation-align="right" aria-label="Align right">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h14M10 10h10M6 14h14M11 18h9"/></svg>
+                  </button>
+                  <button class="quotation-tool" type="button" data-quotation-action="bigger" aria-label="Bigger text">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                  </button>
+                  <button class="quotation-tool" type="button" data-quotation-action="smaller" aria-label="Smaller text">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                  </button>
+                  <span class="quotation-size-pill" id="quotation-size-pill">48</span>
+                </div>
+
+                <div class="quotation-page-control">
+                  <span>Page</span>
                   <input id="quotation-page-number" type="number" min="1" value="1">
-                </label>
-                <label class="form-field">
-                  <span>Text Size</span>
-                  <input id="quotation-font-size" type="number" min="10" max="180" value="48">
-                </label>
-                <label class="form-field">
-                  <span>Color</span>
-                  <input class="quotation-color" id="quotation-text-color" type="color" value="#111827">
-                </label>
-                <label class="format-toggle">
-                  <input id="quotation-underline" type="checkbox">
-                  <span>Underline</span>
-                </label>
+                </div>
               </div>
 
+              <input id="quotation-font-size" type="hidden" value="48">
+              <input id="quotation-font-style" type="hidden" value="regular">
+              <input id="quotation-align" type="hidden" value="left">
+              <input id="quotation-underline" type="hidden" value="false">
+              <input id="quotation-strike" type="hidden" value="false">
+              <input class="file-input" id="quotation-text-color" type="color" value="#111827">
               <input id="quotation-box-x" type="hidden" value="150">
               <input id="quotation-box-y" type="hidden" value="761">
               <input id="quotation-box-width" type="hidden" value="2270">
@@ -430,6 +437,6 @@
   <div class="toast hidden" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="app.js?v=61"></script>
+  <script src="app.js?v=62"></script>
 </body>
 </html>

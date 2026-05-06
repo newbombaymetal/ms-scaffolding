@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '61';
+const APP_VERSION = '62';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -18,6 +18,7 @@ let quotationPreviewPageSize = { width: 0, height: 0 };
 let quotationRenderToken = 0;
 let quotationTemplateLoadStarted = false;
 let quotationResizeTimer = null;
+let quotationGuidesVisible = true;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -218,14 +219,13 @@ function wireEvents() {
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
   document.getElementById('add-item').addEventListener('click', () => toast('Add item flow ready'));
   document.getElementById('quotation-pdf').addEventListener('change', handleQuotationPdf);
+  document.getElementById('quotation-paper').addEventListener('pointerdown', handleQuotationPaperPointerDown);
   document.getElementById('quotation-write-text').addEventListener('input', handleQuotationEditorChange);
   document.getElementById('quotation-page-number').addEventListener('input', handleQuotationPageChange);
-  document.getElementById('quotation-font-size').addEventListener('input', handleQuotationEditorChange);
   document.getElementById('quotation-text-color').addEventListener('input', handleQuotationEditorChange);
-  document.getElementById('quotation-underline').addEventListener('change', handleQuotationEditorChange);
-  document.querySelectorAll('input[name="quotation-font-style"], input[name="quotation-align"]').forEach(input => {
-    input.addEventListener('change', handleQuotationEditorChange);
-  });
+  document.querySelectorAll('[data-quotation-action]').forEach(button => button.addEventListener('click', handleQuotationAction));
+  document.querySelectorAll('[data-quotation-toggle]').forEach(button => button.addEventListener('click', handleQuotationToggle));
+  document.querySelectorAll('[data-quotation-align]').forEach(button => button.addEventListener('click', handleQuotationAlign));
   document.getElementById('write-quotation-pdf').addEventListener('click', writeQuotationPdf);
   document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
   window.addEventListener('resize', scheduleQuotationPreviewRender);
@@ -659,12 +659,110 @@ async function handleQuotationPdf(event) {
 
 function handleQuotationEditorChange() {
   markQuotationDirty();
+  refreshQuotationToolbarState();
   updateQuotationLivePreview();
 }
 
 function handleQuotationPageChange() {
   markQuotationDirty();
   renderQuotationPreview();
+}
+
+function handleQuotationPaperPointerDown(event) {
+  if (!quotationPreviewScale || !quotationPreviewPageSize.width) return;
+  if (event.target?.id === 'quotation-write-text') return;
+
+  const paper = document.getElementById('quotation-paper');
+  const rect = paper.getBoundingClientRect();
+  const cssX = event.clientX - rect.left;
+  const cssY = event.clientY - rect.top;
+  if (cssX < 0 || cssY < 0 || cssX > rect.width || cssY > rect.height) return;
+
+  event.preventDefault();
+  setQuotationTypingPosition(cssX / quotationPreviewScale, cssY / quotationPreviewScale);
+  markQuotationDirty();
+  updateQuotationLivePreview();
+
+  const input = document.getElementById('quotation-write-text');
+  input.focus({ preventScroll: true });
+}
+
+function handleQuotationAction(event) {
+  const action = event.currentTarget.dataset.quotationAction;
+  if (action === 'focus') {
+    document.getElementById('quotation-write-text').focus({ preventScroll: true });
+    return;
+  }
+
+  if (action === 'bullet') {
+    insertQuotationText('• ');
+    return;
+  }
+
+  if (action === 'guides') {
+    quotationGuidesVisible = !quotationGuidesVisible;
+    event.currentTarget.classList.toggle('active', quotationGuidesVisible);
+    updateQuotationLivePreview();
+    return;
+  }
+
+  if (action === 'bigger' || action === 'smaller') {
+    const input = document.getElementById('quotation-font-size');
+    const step = event.shiftKey ? 10 : 4;
+    const delta = action === 'bigger' ? step : -step;
+    input.value = clampNumber(safeNumber('quotation-font-size', 48) + delta, 10, 180);
+    handleQuotationEditorChange();
+  }
+}
+
+function handleQuotationToggle(event) {
+  const button = event.currentTarget;
+  const name = button.dataset.quotationToggle;
+  const nextActive = !button.classList.contains('active');
+  button.classList.toggle('active', nextActive);
+
+  if (name === 'underline' || name === 'strike') {
+    document.getElementById(`quotation-${name}`).value = nextActive ? 'true' : 'false';
+  }
+
+  document.getElementById('quotation-font-style').value = quotationFontStyle();
+  handleQuotationEditorChange();
+}
+
+function handleQuotationAlign(event) {
+  const align = event.currentTarget.dataset.quotationAlign || 'left';
+  document.querySelectorAll('[data-quotation-align]').forEach(button => {
+    button.classList.toggle('active', button.dataset.quotationAlign === align);
+  });
+  document.getElementById('quotation-align').value = align;
+  handleQuotationEditorChange();
+}
+
+function insertQuotationText(text) {
+  const input = document.getElementById('quotation-write-text');
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.value = `${input.value.slice(0, start)}${text}${input.value.slice(end)}`;
+  input.selectionStart = input.selectionEnd = start + text.length;
+  input.focus({ preventScroll: true });
+  handleQuotationEditorChange();
+}
+
+function setQuotationTypingPosition(x, y) {
+  const fontSize = clampNumber(safeNumber('quotation-font-size', 48), 10, 180);
+  const pageWidth = quotationPreviewPageSize.width;
+  const pageHeight = quotationPreviewPageSize.height;
+  const margin = 24;
+  const minWidth = Math.min(360, Math.max(120, pageWidth - margin * 2));
+  const safeX = clampNumber(x, margin, Math.max(margin, pageWidth - minWidth - margin));
+  const safeY = clampNumber(y, margin, Math.max(margin, pageHeight - fontSize * 1.5 - margin));
+  const width = Math.max(minWidth, pageWidth - safeX - margin);
+  const height = Math.max(fontSize * 1.6, pageHeight - safeY - margin);
+
+  document.getElementById('quotation-box-x').value = Math.round(safeX);
+  document.getElementById('quotation-box-y').value = Math.round(safeY);
+  document.getElementById('quotation-box-width').value = Math.round(width);
+  document.getElementById('quotation-box-height').value = Math.round(height);
 }
 
 function markQuotationDirty() {
@@ -744,6 +842,7 @@ function resetQuotationPreview(message) {
   const empty = document.getElementById('quotation-preview-empty');
   if (canvas) canvas.classList.add('hidden');
   if (input) input.style.display = 'none';
+  hideQuotationGuides();
   if (empty) {
     empty.textContent = message;
     empty.classList.remove('hidden');
@@ -756,26 +855,89 @@ function updateQuotationLivePreview() {
 
   const scale = quotationPreviewScale;
   const fontSize = clampNumber(safeNumber('quotation-font-size', 48), 10, 180);
-  const style = checkedValue('quotation-font-style', 'regular');
-  const align = checkedValue('quotation-align', 'left');
-  const underline = Boolean(document.getElementById('quotation-underline')?.checked);
+  const style = quotationFontStyle();
+  const align = quotationAlign();
+  const underline = quotationBoolean('underline');
+  const strike = quotationBoolean('strike');
   const boxX = clampNumber(safeNumber('quotation-box-x', 150), 0, Math.max(0, quotationPreviewPageSize.width - 40));
   const boxTopFromPage = clampNumber(safeNumber('quotation-box-y', 761), 0, Math.max(0, quotationPreviewPageSize.height - fontSize));
   const boxWidth = clampNumber(safeNumber('quotation-box-width', 2270), 40, Math.max(40, quotationPreviewPageSize.width - boxX - 12));
   const boxHeight = clampNumber(safeNumber('quotation-box-height', 2224), fontSize * 1.5, Math.max(fontSize * 1.5, quotationPreviewPageSize.height - boxTopFromPage - 12));
+  const cssLineHeight = Math.max(14, fontSize * scale * 1.28);
+  const textLines = Math.max(1, input.value.split('\n').length);
+  const cssHeight = Math.min(boxHeight * scale, Math.max(cssLineHeight * 1.6, Math.min(cssLineHeight * (textLines + 1) + 10, 260)));
 
   input.style.display = 'block';
   input.style.left = `${Math.round(boxX * scale)}px`;
   input.style.top = `${Math.round(boxTopFromPage * scale)}px`;
   input.style.width = `${Math.round(boxWidth * scale)}px`;
-  input.style.height = `${Math.round(boxHeight * scale)}px`;
+  input.style.height = `${Math.round(cssHeight)}px`;
   input.style.fontSize = `${Math.max(9, fontSize * scale)}px`;
   input.style.lineHeight = '1.28';
   input.style.fontWeight = style.includes('bold') ? '800' : '400';
   input.style.fontStyle = style.includes('italic') ? 'italic' : 'normal';
   input.style.textAlign = align === 'center' ? 'center' : align;
   input.style.color = document.getElementById('quotation-text-color')?.value || '#111827';
-  input.style.textDecorationLine = underline ? 'underline' : 'none';
+  input.style.textDecorationLine = [underline ? 'underline' : '', strike ? 'line-through' : ''].filter(Boolean).join(' ') || 'none';
+
+  refreshQuotationToolbarState();
+  updateQuotationGuides(boxX * scale, boxTopFromPage * scale, boxWidth * scale, cssHeight, boxX, boxTopFromPage);
+}
+
+function updateQuotationGuides(cssX, cssY, cssWidth, cssHeight, pdfX, pdfY) {
+  const layer = document.getElementById('quotation-guide-layer');
+  if (!layer || !quotationGuidesVisible) {
+    hideQuotationGuides();
+    return;
+  }
+
+  const paper = document.getElementById('quotation-paper');
+  paper.classList.add('guides-active');
+  layer.style.display = 'block';
+  document.getElementById('quotation-guide-vertical').style.left = `${Math.round(cssX)}px`;
+  document.getElementById('quotation-guide-horizontal').style.top = `${Math.round(cssY)}px`;
+  const dot = document.getElementById('quotation-guide-dot');
+  dot.style.left = `${Math.round(cssX)}px`;
+  dot.style.top = `${Math.round(cssY)}px`;
+  const badge = document.getElementById('quotation-guide-badge');
+  badge.style.left = `${Math.round(cssX + Math.min(cssWidth, 120) + 8)}px`;
+  badge.style.top = `${Math.round(cssY + Math.min(cssHeight, 28) + 8)}px`;
+  badge.textContent = `${Math.round(pdfX)}, ${Math.round(pdfY)}`;
+}
+
+function hideQuotationGuides() {
+  document.getElementById('quotation-paper')?.classList.remove('guides-active');
+  const layer = document.getElementById('quotation-guide-layer');
+  if (layer) layer.style.display = 'none';
+}
+
+function refreshQuotationToolbarState() {
+  const style = quotationFontStyle();
+  document.getElementById('quotation-font-style').value = style;
+  document.getElementById('quotation-align').value = quotationAlign();
+  document.getElementById('quotation-underline').value = quotationBoolean('underline') ? 'true' : 'false';
+  document.getElementById('quotation-strike').value = quotationBoolean('strike') ? 'true' : 'false';
+  setText('quotation-size-pill', String(clampNumber(safeNumber('quotation-font-size', 48), 10, 180)));
+  const color = document.getElementById('quotation-text-color')?.value || '#111827';
+  const colorDot = document.getElementById('quotation-color-dot');
+  if (colorDot) colorDot.style.background = color;
+}
+
+function quotationFontStyle() {
+  const bold = document.getElementById('quotation-bold-tool')?.classList.contains('active');
+  const italic = document.getElementById('quotation-italic-tool')?.classList.contains('active');
+  if (bold && italic) return 'bold-italic';
+  if (bold) return 'bold';
+  if (italic) return 'italic';
+  return 'regular';
+}
+
+function quotationAlign() {
+  return document.querySelector('[data-quotation-align].active')?.dataset.quotationAlign || document.getElementById('quotation-align')?.value || 'left';
+}
+
+function quotationBoolean(name) {
+  return document.getElementById(`quotation-${name}-tool`)?.classList.contains('active') || document.getElementById(`quotation-${name}`)?.value === 'true';
 }
 
 async function writeQuotationPdf() {
@@ -854,9 +1016,10 @@ async function buildQuotationPdfBlob() {
     const page = pages[Math.min(Math.max(pageNumber, 1), pages.length) - 1];
     const { width, height } = page.getSize();
     const fontSize = clampNumber(safeNumber('quotation-font-size', 48), 10, 180);
-    const style = checkedValue('quotation-font-style', 'regular');
-    const align = checkedValue('quotation-align', 'left');
-    const underline = Boolean(document.getElementById('quotation-underline')?.checked);
+    const style = quotationFontStyle();
+    const align = quotationAlign();
+    const underline = quotationBoolean('underline');
+    const strike = quotationBoolean('strike');
     const color = pdfColorFromHex(document.getElementById('quotation-text-color')?.value, rgb);
     const font = await pdfDoc.embedFont(standardFontForStyle(style, StandardFonts));
     const boxX = clampNumber(safeNumber('quotation-box-x', 150), 0, Math.max(0, width - 40));
@@ -888,6 +1051,15 @@ async function buildQuotationPdfBlob() {
         page.drawLine({
           start: { x, y: y - Math.max(2, fontSize * 0.08) },
           end: { x: x + textWidth, y: y - Math.max(2, fontSize * 0.08) },
+          thickness: Math.max(1, fontSize * 0.06),
+          color
+        });
+      }
+
+      if (strike && line) {
+        page.drawLine({
+          start: { x, y: y + fontSize * 0.35 },
+          end: { x: x + textWidth, y: y + fontSize * 0.35 },
           thickness: Math.max(1, fontSize * 0.06),
           color
         });
@@ -926,10 +1098,6 @@ function safeNumber(id, fallback) {
 
 function clampNumber(value, min, max) {
   return Math.min(Math.max(value, min), max);
-}
-
-function checkedValue(name, fallback) {
-  return document.querySelector(`input[name="${name}"]:checked`)?.value || fallback;
 }
 
 function standardFontForStyle(style, StandardFonts) {
