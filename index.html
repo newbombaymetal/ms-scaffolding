@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="69">
+  <meta name="app-version" content="70">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NBM">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="manifest" href="manifest.json?v=69">
+  <link rel="manifest" href="manifest.json?v=70">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=69">
+  <link rel="stylesheet" href="styles.css?v=70">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -224,12 +224,6 @@
                 <div class="quotation-paper" id="quotation-paper">
                   <canvas class="quotation-preview-canvas" id="quotation-preview-canvas" aria-label="Quotation PDF preview"></canvas>
                   <div class="quotation-live-input" id="quotation-write-text" contenteditable="false" role="textbox" aria-label="Type on quotation paper"></div>
-                  <div class="quotation-guide-layer" id="quotation-guide-layer" aria-hidden="true">
-                    <span class="quotation-guide quotation-guide-vertical" id="quotation-guide-vertical"></span>
-                    <span class="quotation-guide quotation-guide-horizontal" id="quotation-guide-horizontal"></span>
-                    <span class="quotation-guide-dot" id="quotation-guide-dot"></span>
-                    <span class="quotation-guide-badge" id="quotation-guide-badge">0, 0</span>
-                  </div>
                   <div class="quotation-preview-empty" id="quotation-preview-empty">Quotation paper loading...</div>
                 </div>
               </div>
@@ -259,9 +253,6 @@
                   </button>
                   <button class="quotation-tool" type="button" data-quotation-action="bullet" aria-label="Insert bullet">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2"/><circle cx="6" cy="17" r="2"/><path d="M11 7h9M11 17h9"/></svg>
-                  </button>
-                  <button class="quotation-tool" id="quotation-guides-tool" type="button" data-quotation-action="guides" aria-label="Move with alignment guides">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 10h16M4 16h16M10 4v16M16 4v16"/></svg>
                   </button>
                   <label class="quotation-tool" for="quotation-pdf" aria-label="Upload PDF">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66L9.64 17.2a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg>
@@ -459,6 +450,6 @@
   <div class="toast hidden" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="app.js?v=69"></script>
+  <script src="app.js?v=70"></script>
 </body>
 </html>

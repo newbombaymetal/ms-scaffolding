@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '69';
+const APP_VERSION = '70';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -23,6 +23,9 @@ let quotationSavedRange = null;
 let quotationActiveEditorId = '';
 let quotationEditorCounter = 1;
 let quotationZoomLevel = 1;
+let quotationPinchGesture = null;
+let quotationPinchRenderTimer = null;
+let quotationEditorDrag = null;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -223,7 +226,13 @@ function wireEvents() {
   document.getElementById('create-book-secondary').addEventListener('click', () => toast('New series flow ready'));
   document.getElementById('add-item').addEventListener('click', () => toast('Add item flow ready'));
   document.getElementById('quotation-pdf').addEventListener('change', handleQuotationPdf);
-  document.getElementById('quotation-paper').addEventListener('click', handleQuotationPaperClick);
+  const quotationPaper = document.getElementById('quotation-paper');
+  const quotationFrame = document.getElementById('quotation-paper-frame');
+  quotationPaper.addEventListener('click', handleQuotationPaperClick);
+  quotationFrame.addEventListener('touchstart', handleQuotationPinchStart, { passive: false });
+  quotationFrame.addEventListener('touchmove', handleQuotationPinchMove, { passive: false });
+  quotationFrame.addEventListener('touchend', handleQuotationPinchEnd, { passive: false });
+  quotationFrame.addEventListener('touchcancel', handleQuotationPinchEnd, { passive: false });
   const quotationEditor = document.getElementById('quotation-write-text');
   setupQuotationEditor(quotationEditor);
   document.getElementById('quotation-zoom-in').addEventListener('click', () => changeQuotationZoom(0.15));
@@ -238,7 +247,10 @@ function wireEvents() {
   document.querySelectorAll('button[data-quotation-action], button[data-quotation-toggle], button[data-quotation-align]').forEach(button => {
     button.addEventListener('pointerdown', preserveQuotationSelectionOnTool);
   });
-  document.getElementById('quotation-controls-toggle').addEventListener('click', toggleQuotationControls);
+  document.getElementById('quotation-controls-toggle').addEventListener('click', event => {
+    event.preventDefault();
+    toggleQuotationControls();
+  });
   document.getElementById('write-quotation-pdf').addEventListener('click', writeQuotationPdf);
   document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
   window.addEventListener('resize', scheduleQuotationPreviewRender);
@@ -717,10 +729,24 @@ function setQuotationEditorEditable(editor, editable) {
   editor.dataset.editable = editable ? 'true' : 'false';
 }
 
-function syncQuotationEditorEditability(activeEditor = quotationEditorElement()) {
+function syncQuotationEditorEditability(activeEditor = null) {
+  const currentActiveEditor = activeEditor || (quotationActiveEditorId ? document.getElementById(quotationActiveEditorId) : null);
+  const keepAllEditable = !isMobileQuotationLayout();
   quotationEditorElements().forEach(editor => {
-    setQuotationEditorEditable(editor, editor === activeEditor);
+    setQuotationEditorEditable(editor, keepAllEditable || editor === currentActiveEditor);
+    editor.classList.toggle('active', editor === currentActiveEditor);
   });
+}
+
+function ensureQuotationMoveHandle(editor) {
+  if (!editor || editor.querySelector(':scope > .quotation-move-handle')) return;
+  const handle = document.createElement('span');
+  handle.className = 'quotation-move-handle';
+  handle.contentEditable = 'false';
+  handle.setAttribute('role', 'button');
+  handle.setAttribute('aria-label', 'Move text');
+  handle.addEventListener('pointerdown', startQuotationEditorDrag);
+  editor.appendChild(handle);
 }
 
 function setupQuotationEditor(editor) {
@@ -732,7 +758,8 @@ function setupQuotationEditor(editor) {
   editor.dataset.boxY = editor.dataset.boxY || document.getElementById('quotation-box-y')?.value || '761';
   editor.dataset.boxWidth = editor.dataset.boxWidth || document.getElementById('quotation-box-width')?.value || '2270';
   editor.dataset.boxHeight = editor.dataset.boxHeight || document.getElementById('quotation-box-height')?.value || '2224';
-  setQuotationEditorEditable(editor, editor.id === quotationActiveEditorId);
+  ensureQuotationMoveHandle(editor);
+  setQuotationEditorEditable(editor, !isMobileQuotationLayout() || editor.id === quotationActiveEditorId);
   editor.addEventListener('input', handleQuotationEditorChange);
   editor.addEventListener('focus', () => setActiveQuotationEditor(editor, true));
   editor.addEventListener('click', event => {
@@ -781,6 +808,50 @@ function createQuotationEditorBlock() {
   setupQuotationEditor(editor);
   setActiveQuotationEditor(editor);
   return editor;
+}
+
+function startQuotationEditorDrag(event) {
+  const editor = quotationEditorFromNode(event.currentTarget);
+  if (!editor || !quotationPreviewScale || !quotationPreviewPageSize.width) return;
+  event.preventDefault();
+  event.stopPropagation();
+  setActiveQuotationEditor(editor, true);
+  const box = quotationEditorBox(editor);
+  quotationEditorDrag = {
+    editor,
+    pointerId: event.pointerId,
+    startClientX: event.clientX,
+    startClientY: event.clientY,
+    startBox: box
+  };
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  window.addEventListener('pointermove', dragQuotationEditor);
+  window.addEventListener('pointerup', stopQuotationEditorDrag, { once: true });
+  window.addEventListener('pointercancel', stopQuotationEditorDrag, { once: true });
+}
+
+function dragQuotationEditor(event) {
+  if (!quotationEditorDrag || event.pointerId !== quotationEditorDrag.pointerId) return;
+  event.preventDefault();
+  const { editor, startClientX, startClientY, startBox } = quotationEditorDrag;
+  const dx = (event.clientX - startClientX) / quotationPreviewScale;
+  const dy = (event.clientY - startClientY) / quotationPreviewScale;
+  const nextX = clampNumber(startBox.x + dx, 0, Math.max(0, quotationPreviewPageSize.width - 40));
+  const nextY = clampNumber(startBox.y + dy, 0, Math.max(0, quotationPreviewPageSize.height - quotationEditorFontSize(editor)));
+  setQuotationEditorBox(editor, {
+    x: nextX,
+    y: nextY,
+    width: startBox.width,
+    height: startBox.height
+  });
+  markQuotationDirty();
+  updateQuotationLivePreview();
+}
+
+function stopQuotationEditorDrag() {
+  if (!quotationEditorDrag) return;
+  quotationEditorDrag = null;
+  window.removeEventListener('pointermove', dragQuotationEditor);
 }
 
 function placeQuotationCaretFromPoint(editor, clientX, clientY) {
@@ -991,14 +1062,6 @@ function handleQuotationAction(event) {
     return;
   }
 
-  if (action === 'guides') {
-    quotationGuidesVisible = !quotationGuidesVisible;
-    event.currentTarget.classList.toggle('active', quotationGuidesVisible);
-    updateQuotationLivePreview();
-    setText('quotation-status', quotationGuidesVisible ? 'Alignment guides on for the active text block.' : 'Alignment guides off. Blank taps create new typing places.');
-    return;
-  }
-
   if (action === 'bigger' || action === 'smaller') {
     const input = document.getElementById('quotation-font-size');
     const step = event.shiftKey ? 10 : 4;
@@ -1098,6 +1161,7 @@ function markQuotationDirty() {
 
 function scheduleQuotationPreviewRender() {
   if (currentView !== 'quotation-enquiry' || !quotationPdfBytes) return;
+  syncQuotationEditorEditability();
   window.clearTimeout(quotationResizeTimer);
   quotationResizeTimer = window.setTimeout(renderQuotationPreview, 140);
 }
@@ -1144,6 +1208,80 @@ function resetQuotationZoom() {
   quotationZoomLevel = 1;
   updateQuotationZoomReadout();
   renderQuotationPreview().then(() => restoreQuotationViewport(viewport));
+}
+
+function quotationTouchDistance(touches) {
+  const [first, second] = touches;
+  return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+}
+
+function quotationTouchMidpoint(touches, frame) {
+  const [first, second] = touches;
+  const rect = frame.getBoundingClientRect();
+  return {
+    x: (first.clientX + second.clientX) / 2 - rect.left,
+    y: (first.clientY + second.clientY) / 2 - rect.top
+  };
+}
+
+function handleQuotationPinchStart(event) {
+  if (event.touches.length !== 2 || !quotationPdfBytes) return;
+  const frame = document.getElementById('quotation-paper-frame');
+  if (!frame) return;
+  const startDistance = quotationTouchDistance(event.touches);
+  if (!startDistance) return;
+
+  event.preventDefault();
+  const midpoint = quotationTouchMidpoint(event.touches, frame);
+  if (document.activeElement?.classList?.contains('quotation-live-input')) {
+    document.activeElement.blur();
+  }
+  quotationPinchGesture = {
+    startDistance,
+    startZoom: quotationZoomLevel,
+    midpoint,
+    contentX: frame.scrollLeft + midpoint.x,
+    contentY: frame.scrollTop + midpoint.y
+  };
+}
+
+function handleQuotationPinchMove(event) {
+  if (!quotationPinchGesture || event.touches.length !== 2) return;
+  event.preventDefault();
+  const distance = quotationTouchDistance(event.touches);
+  const nextZoom = clampNumber(Math.round((quotationPinchGesture.startZoom * distance / quotationPinchGesture.startDistance) * 100) / 100, 0.6, 2.5);
+  if (Math.abs(nextZoom - quotationZoomLevel) < 0.01) return;
+  quotationZoomLevel = nextZoom;
+  updateQuotationZoomReadout();
+  requestQuotationPinchRender();
+}
+
+function handleQuotationPinchEnd(event) {
+  if (!quotationPinchGesture || event.touches.length >= 2) return;
+  event.preventDefault();
+  const gesture = quotationPinchGesture;
+  quotationPinchGesture = null;
+  window.clearTimeout(quotationPinchRenderTimer);
+  renderQuotationPreview().then(() => restoreQuotationPinchViewport(gesture));
+}
+
+function requestQuotationPinchRender() {
+  const gesture = quotationPinchGesture;
+  window.clearTimeout(quotationPinchRenderTimer);
+  quotationPinchRenderTimer = window.setTimeout(() => {
+    renderQuotationPreview().then(() => restoreQuotationPinchViewport(gesture));
+  }, 60);
+}
+
+function restoreQuotationPinchViewport(gesture) {
+  if (!gesture) return;
+  const frame = document.getElementById('quotation-paper-frame');
+  if (!frame) return;
+  const ratio = quotationZoomLevel / Math.max(gesture.startZoom, 0.01);
+  const maxLeft = Math.max(0, frame.scrollWidth - frame.clientWidth);
+  const maxTop = Math.max(0, frame.scrollHeight - frame.clientHeight);
+  frame.scrollLeft = clampNumber(gesture.contentX * ratio - gesture.midpoint.x, 0, maxLeft);
+  frame.scrollTop = clampNumber(gesture.contentY * ratio - gesture.midpoint.y, 0, maxTop);
 }
 
 async function renderQuotationPreview() {
@@ -1547,6 +1685,7 @@ function buildQuotationRichLines(baseFontSize, editor = quotationEditorElement()
     if (node.nodeType !== Node.ELEMENT_NODE) return;
 
     const element = node;
+    if (element.classList?.contains('quotation-move-handle')) return;
     const tag = element.tagName;
     if (tag === 'BR') {
       pushLine(inherited.align);
