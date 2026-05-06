@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '62';
+const APP_VERSION = '63';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -18,7 +18,7 @@ let quotationPreviewPageSize = { width: 0, height: 0 };
 let quotationRenderToken = 0;
 let quotationTemplateLoadStarted = false;
 let quotationResizeTimer = null;
-let quotationGuidesVisible = true;
+let quotationGuidesVisible = false;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -679,11 +679,15 @@ function handleQuotationPaperPointerDown(event) {
   if (cssX < 0 || cssY < 0 || cssX > rect.width || cssY > rect.height) return;
 
   event.preventDefault();
+  const input = document.getElementById('quotation-write-text');
+  if (input.value.trim() && !quotationGuidesVisible) {
+    input.focus({ preventScroll: true });
+    return;
+  }
+
   setQuotationTypingPosition(cssX / quotationPreviewScale, cssY / quotationPreviewScale);
   markQuotationDirty();
   updateQuotationLivePreview();
-
-  const input = document.getElementById('quotation-write-text');
   input.focus({ preventScroll: true });
 }
 
@@ -703,6 +707,7 @@ function handleQuotationAction(event) {
     quotationGuidesVisible = !quotationGuidesVisible;
     event.currentTarget.classList.toggle('active', quotationGuidesVisible);
     updateQuotationLivePreview();
+    setText('quotation-status', quotationGuidesVisible ? 'Move mode on. Tap the PDF to reposition text.' : 'Move mode off. Text position is locked while typing.');
     return;
   }
 
