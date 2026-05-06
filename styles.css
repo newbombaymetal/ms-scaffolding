@@ -1136,18 +1136,39 @@ svg {
   outline: 0;
   padding: 0;
   resize: none;
-  overflow: auto;
+  overflow: visible;
   color: #111827;
   background: transparent;
   font-family: Arial, Helvetica, sans-serif;
   white-space: pre-wrap;
   box-shadow: none;
   caret-color: #0284c7;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .quotation-live-input:focus {
-  background: rgba(91, 229, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.32);
+  background: transparent;
+  box-shadow: none;
+}
+
+.quotation-live-input b,
+.quotation-live-input strong {
+  font-weight: 800;
+}
+
+.quotation-live-input i,
+.quotation-live-input em {
+  font-style: italic;
+}
+
+.quotation-live-input u {
+  text-decoration: underline;
+}
+
+.quotation-live-input s,
+.quotation-live-input strike {
+  text-decoration: line-through;
 }
 
 .quotation-guide-layer {

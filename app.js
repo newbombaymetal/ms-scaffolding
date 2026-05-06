@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '63';
+const APP_VERSION = '64';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -19,6 +19,7 @@ let quotationRenderToken = 0;
 let quotationTemplateLoadStarted = false;
 let quotationResizeTimer = null;
 let quotationGuidesVisible = false;
+let quotationSavedRange = null;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -220,12 +221,20 @@ function wireEvents() {
   document.getElementById('add-item').addEventListener('click', () => toast('Add item flow ready'));
   document.getElementById('quotation-pdf').addEventListener('change', handleQuotationPdf);
   document.getElementById('quotation-paper').addEventListener('pointerdown', handleQuotationPaperPointerDown);
-  document.getElementById('quotation-write-text').addEventListener('input', handleQuotationEditorChange);
+  const quotationEditor = document.getElementById('quotation-write-text');
+  quotationEditor.addEventListener('input', handleQuotationEditorChange);
+  quotationEditor.addEventListener('keyup', saveQuotationSelection);
+  quotationEditor.addEventListener('pointerup', saveQuotationSelection);
+  quotationEditor.addEventListener('blur', saveQuotationSelection);
+  document.addEventListener('selectionchange', handleQuotationSelectionChange);
   document.getElementById('quotation-page-number').addEventListener('input', handleQuotationPageChange);
-  document.getElementById('quotation-text-color').addEventListener('input', handleQuotationEditorChange);
+  document.getElementById('quotation-text-color').addEventListener('input', handleQuotationColorChange);
   document.querySelectorAll('[data-quotation-action]').forEach(button => button.addEventListener('click', handleQuotationAction));
   document.querySelectorAll('[data-quotation-toggle]').forEach(button => button.addEventListener('click', handleQuotationToggle));
   document.querySelectorAll('[data-quotation-align]').forEach(button => button.addEventListener('click', handleQuotationAlign));
+  document.querySelectorAll('button[data-quotation-action], button[data-quotation-toggle], button[data-quotation-align]').forEach(button => {
+    button.addEventListener('pointerdown', preserveQuotationSelectionOnTool);
+  });
   document.getElementById('write-quotation-pdf').addEventListener('click', writeQuotationPdf);
   document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
   window.addEventListener('resize', scheduleQuotationPreviewRender);
@@ -668,9 +677,108 @@ function handleQuotationPageChange() {
   renderQuotationPreview();
 }
 
+function handleQuotationColorChange(event) {
+  runQuotationCommand('foreColor', event.target.value || '#111827');
+}
+
+function quotationEditorElement() {
+  return document.getElementById('quotation-write-text');
+}
+
+function quotationEditorText() {
+  const editor = quotationEditorElement();
+  return (editor?.innerText || editor?.textContent || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\n$/, '');
+}
+
+function quotationEditorHasText() {
+  return quotationEditorText().trim().length > 0;
+}
+
+function selectionBelongsToQuotationEditor() {
+  const editor = quotationEditorElement();
+  const selection = window.getSelection?.();
+  if (!editor || !selection || !selection.rangeCount) return false;
+  return editor.contains(selection.anchorNode) && editor.contains(selection.focusNode);
+}
+
+function saveQuotationSelection() {
+  const selection = window.getSelection?.();
+  if (!selectionBelongsToQuotationEditor() || !selection?.rangeCount) return;
+  quotationSavedRange = selection.getRangeAt(0).cloneRange();
+}
+
+function restoreQuotationSelection() {
+  const editor = quotationEditorElement();
+  if (!editor) return;
+  editor.focus({ preventScroll: true });
+  const selection = window.getSelection?.();
+  if (!selection) return;
+  if (quotationSavedRange && editor.contains(quotationSavedRange.commonAncestorContainer)) {
+    selection.removeAllRanges();
+    selection.addRange(quotationSavedRange);
+    return;
+  }
+  const range = document.createRange();
+  range.selectNodeContents(editor);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  quotationSavedRange = range.cloneRange();
+}
+
+function handleQuotationSelectionChange() {
+  if (!selectionBelongsToQuotationEditor()) return;
+  saveQuotationSelection();
+  syncQuotationToolbarFromSelection();
+}
+
+function preserveQuotationSelectionOnTool(event) {
+  if (selectionBelongsToQuotationEditor()) saveQuotationSelection();
+  if (event.pointerType === 'mouse') event.preventDefault();
+}
+
+function runQuotationCommand(command, value = null) {
+  restoreQuotationSelection();
+  try {
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand(command, false, value);
+  } catch (error) {
+    console.warn('Text command failed', error);
+  }
+  saveQuotationSelection();
+  syncQuotationToolbarFromSelection();
+  handleQuotationEditorChange();
+}
+
+function syncQuotationToolbarFromSelection() {
+  const bold = Boolean(document.queryCommandState?.('bold'));
+  const italic = Boolean(document.queryCommandState?.('italic'));
+  const underline = Boolean(document.queryCommandState?.('underline'));
+  const strike = Boolean(document.queryCommandState?.('strikeThrough'));
+  document.getElementById('quotation-bold-tool')?.classList.toggle('active', bold);
+  document.getElementById('quotation-italic-tool')?.classList.toggle('active', italic);
+  document.getElementById('quotation-underline-tool')?.classList.toggle('active', underline);
+  document.getElementById('quotation-strike-tool')?.classList.toggle('active', strike);
+  document.getElementById('quotation-underline').value = underline ? 'true' : 'false';
+  document.getElementById('quotation-strike').value = strike ? 'true' : 'false';
+  document.getElementById('quotation-font-style').value = quotationFontStyle();
+  const align = document.queryCommandState?.('justifyCenter')
+    ? 'center'
+    : document.queryCommandState?.('justifyRight')
+      ? 'right'
+      : 'left';
+  document.querySelectorAll('[data-quotation-align]').forEach(button => {
+    button.classList.toggle('active', button.dataset.quotationAlign === align);
+  });
+  document.getElementById('quotation-align').value = align;
+}
+
 function handleQuotationPaperPointerDown(event) {
   if (!quotationPreviewScale || !quotationPreviewPageSize.width) return;
-  if (event.target?.id === 'quotation-write-text') return;
+  const input = quotationEditorElement();
+  if (input?.contains(event.target)) return;
 
   const paper = document.getElementById('quotation-paper');
   const rect = paper.getBoundingClientRect();
@@ -679,8 +787,7 @@ function handleQuotationPaperPointerDown(event) {
   if (cssX < 0 || cssY < 0 || cssX > rect.width || cssY > rect.height) return;
 
   event.preventDefault();
-  const input = document.getElementById('quotation-write-text');
-  if (input.value.trim() && !quotationGuidesVisible) {
+  if (quotationEditorHasText() && !quotationGuidesVisible) {
     input.focus({ preventScroll: true });
     return;
   }
@@ -694,12 +801,12 @@ function handleQuotationPaperPointerDown(event) {
 function handleQuotationAction(event) {
   const action = event.currentTarget.dataset.quotationAction;
   if (action === 'focus') {
-    document.getElementById('quotation-write-text').focus({ preventScroll: true });
+    restoreQuotationSelection();
     return;
   }
 
   if (action === 'bullet') {
-    insertQuotationText('• ');
+    runQuotationCommand('insertUnorderedList');
     return;
   }
 
@@ -715,42 +822,75 @@ function handleQuotationAction(event) {
     const input = document.getElementById('quotation-font-size');
     const step = event.shiftKey ? 10 : 4;
     const delta = action === 'bigger' ? step : -step;
+    if (applyQuotationSelectionFontSize(delta)) return;
     input.value = clampNumber(safeNumber('quotation-font-size', 48) + delta, 10, 180);
     handleQuotationEditorChange();
   }
 }
 
 function handleQuotationToggle(event) {
-  const button = event.currentTarget;
-  const name = button.dataset.quotationToggle;
-  const nextActive = !button.classList.contains('active');
-  button.classList.toggle('active', nextActive);
-
-  if (name === 'underline' || name === 'strike') {
-    document.getElementById(`quotation-${name}`).value = nextActive ? 'true' : 'false';
-  }
-
-  document.getElementById('quotation-font-style').value = quotationFontStyle();
-  handleQuotationEditorChange();
+  const name = event.currentTarget.dataset.quotationToggle;
+  const commands = {
+    bold: 'bold',
+    italic: 'italic',
+    underline: 'underline',
+    strike: 'strikeThrough'
+  };
+  if (commands[name]) runQuotationCommand(commands[name]);
 }
 
 function handleQuotationAlign(event) {
   const align = event.currentTarget.dataset.quotationAlign || 'left';
+  const command = align === 'center' ? 'justifyCenter' : align === 'right' ? 'justifyRight' : 'justifyLeft';
+  runQuotationCommand(command);
   document.querySelectorAll('[data-quotation-align]').forEach(button => {
     button.classList.toggle('active', button.dataset.quotationAlign === align);
   });
   document.getElementById('quotation-align').value = align;
-  handleQuotationEditorChange();
 }
 
 function insertQuotationText(text) {
-  const input = document.getElementById('quotation-write-text');
-  const start = input.selectionStart ?? input.value.length;
-  const end = input.selectionEnd ?? input.value.length;
-  input.value = `${input.value.slice(0, start)}${text}${input.value.slice(end)}`;
-  input.selectionStart = input.selectionEnd = start + text.length;
-  input.focus({ preventScroll: true });
+  runQuotationCommand('insertText', text);
+}
+
+function applyQuotationSelectionFontSize(delta) {
+  restoreQuotationSelection();
+  const editor = quotationEditorElement();
+  const selection = window.getSelection?.();
+  if (!editor || !selection || !selection.rangeCount) return false;
+  const range = selection.getRangeAt(0);
+  if (range.collapsed || !editor.contains(range.commonAncestorContainer)) return false;
+
+  const parent = (selection.focusNode?.nodeType === Node.ELEMENT_NODE ? selection.focusNode : selection.focusNode?.parentElement) || editor;
+  const editorPx = parseFloat(window.getComputedStyle(editor).fontSize) || 16;
+  const currentPx = parseFloat(window.getComputedStyle(parent).fontSize) || editorPx;
+  const deltaPx = delta * Math.max(0.5, quotationPreviewScale || 1);
+  const nextPx = clampNumber(currentPx + deltaPx, 8, 220);
+  wrapQuotationSelectionWithStyle({ fontSize: `${(nextPx / editorPx).toFixed(3)}em` });
   handleQuotationEditorChange();
+  return true;
+}
+
+function wrapQuotationSelectionWithStyle(styles) {
+  const selection = window.getSelection?.();
+  if (!selection || !selection.rangeCount) return;
+  const range = selection.getRangeAt(0);
+  const span = document.createElement('span');
+  Object.entries(styles).forEach(([key, value]) => {
+    span.style[key] = value;
+  });
+  try {
+    range.surroundContents(span);
+  } catch (error) {
+    const fragment = range.extractContents();
+    span.appendChild(fragment);
+    range.insertNode(span);
+  }
+  selection.removeAllRanges();
+  const nextRange = document.createRange();
+  nextRange.selectNodeContents(span);
+  selection.addRange(nextRange);
+  quotationSavedRange = nextRange.cloneRange();
 }
 
 function setQuotationTypingPosition(x, y) {
@@ -860,16 +1000,12 @@ function updateQuotationLivePreview() {
 
   const scale = quotationPreviewScale;
   const fontSize = clampNumber(safeNumber('quotation-font-size', 48), 10, 180);
-  const style = quotationFontStyle();
-  const align = quotationAlign();
-  const underline = quotationBoolean('underline');
-  const strike = quotationBoolean('strike');
   const boxX = clampNumber(safeNumber('quotation-box-x', 150), 0, Math.max(0, quotationPreviewPageSize.width - 40));
   const boxTopFromPage = clampNumber(safeNumber('quotation-box-y', 761), 0, Math.max(0, quotationPreviewPageSize.height - fontSize));
   const boxWidth = clampNumber(safeNumber('quotation-box-width', 2270), 40, Math.max(40, quotationPreviewPageSize.width - boxX - 12));
   const boxHeight = clampNumber(safeNumber('quotation-box-height', 2224), fontSize * 1.5, Math.max(fontSize * 1.5, quotationPreviewPageSize.height - boxTopFromPage - 12));
   const cssLineHeight = Math.max(14, fontSize * scale * 1.28);
-  const textLines = Math.max(1, input.value.split('\n').length);
+  const textLines = Math.max(1, quotationEditorText().split('\n').length);
   const cssHeight = Math.min(boxHeight * scale, Math.max(cssLineHeight * 1.6, Math.min(cssLineHeight * (textLines + 1) + 10, 260)));
 
   input.style.display = 'block';
@@ -879,11 +1015,7 @@ function updateQuotationLivePreview() {
   input.style.height = `${Math.round(cssHeight)}px`;
   input.style.fontSize = `${Math.max(9, fontSize * scale)}px`;
   input.style.lineHeight = '1.28';
-  input.style.fontWeight = style.includes('bold') ? '800' : '400';
-  input.style.fontStyle = style.includes('italic') ? 'italic' : 'normal';
-  input.style.textAlign = align === 'center' ? 'center' : align;
   input.style.color = document.getElementById('quotation-text-color')?.value || '#111827';
-  input.style.textDecorationLine = [underline ? 'underline' : '', strike ? 'line-through' : ''].filter(Boolean).join(' ') || 'none';
 
   refreshQuotationToolbarState();
   updateQuotationGuides(boxX * scale, boxTopFromPage * scale, boxWidth * scale, cssHeight, boxX, boxTopFromPage);
@@ -1006,7 +1138,7 @@ async function buildQuotationPdfBlob() {
   const sourceBytes = await getQuotationPdfBytes();
   if (!sourceBytes) throw new Error('Select a PDF first.');
 
-  const text = document.getElementById('quotation-write-text').value;
+  const text = quotationEditorText();
   if (!text.trim()) throw new Error('Enter text to write.');
 
   if (!window.PDFLib?.PDFDocument) throw new Error('PDF writer is still loading.');
@@ -1021,60 +1153,68 @@ async function buildQuotationPdfBlob() {
     const page = pages[Math.min(Math.max(pageNumber, 1), pages.length) - 1];
     const { width, height } = page.getSize();
     const fontSize = clampNumber(safeNumber('quotation-font-size', 48), 10, 180);
-    const style = quotationFontStyle();
     const align = quotationAlign();
-    const underline = quotationBoolean('underline');
-    const strike = quotationBoolean('strike');
-    const color = pdfColorFromHex(document.getElementById('quotation-text-color')?.value, rgb);
-    const font = await pdfDoc.embedFont(standardFontForStyle(style, StandardFonts));
+    const fonts = {
+      regular: await pdfDoc.embedFont(StandardFonts.Helvetica),
+      bold: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
+      italic: await pdfDoc.embedFont(StandardFonts.HelveticaOblique),
+      boldItalic: await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique)
+    };
     const boxX = clampNumber(safeNumber('quotation-box-x', 150), 0, Math.max(0, width - 40));
     const boxTopFromPage = clampNumber(safeNumber('quotation-box-y', 761), 0, Math.max(0, height - fontSize));
     const boxWidth = clampNumber(safeNumber('quotation-box-width', 2270), 40, Math.max(40, width - boxX - 12));
     const boxHeight = clampNumber(safeNumber('quotation-box-height', 2224), fontSize * 1.5, Math.max(fontSize * 1.5, height - boxTopFromPage - 12));
     const boxTopY = height - boxTopFromPage;
     const boxBottomY = Math.max(12, boxTopY - boxHeight);
-    const lineHeight = fontSize * 1.28;
-    const normalizedText = makePdfTextSafe(normalizePdfText(text), font);
-    const allLines = wrapPdfText(normalizedText, font, fontSize, boxWidth);
-    const maxLines = Math.max(1, Math.floor((boxTopY - boxBottomY - fontSize) / lineHeight) + 1);
-    const lines = allLines.slice(0, maxLines);
+    const defaultColor = pdfColorFromCss(document.getElementById('quotation-text-color')?.value, rgb, rgb(0.067, 0.094, 0.153));
+    const richLines = layoutQuotationRichLines(buildQuotationRichLines(fontSize), fonts, rgb, defaultColor, boxWidth);
+    let lineCount = 0;
+    let y = boxTopY - fontSize;
 
-    lines.forEach((line, index) => {
-      const y = boxTopY - fontSize - index * lineHeight;
+    richLines.forEach(line => {
       if (y < boxBottomY) return;
-      const textWidth = Math.min(font.widthOfTextAtSize(line, fontSize), boxWidth);
-      const x = alignedPdfX(boxX, boxWidth, textWidth, align);
-      page.drawText(line, {
-        x,
-        y,
-        size: fontSize,
-        font,
-        color
+      let x = alignedPdfX(boxX, boxWidth, Math.min(line.width, boxWidth), line.align || align);
+      line.segments.forEach(segment => {
+        if (!segment.text.trim()) {
+          x += segment.width;
+          return;
+        }
+        page.drawText(segment.text, {
+          x,
+          y,
+          size: segment.size,
+          font: segment.font,
+          color: segment.color
+        });
+
+        if (segment.underline) {
+          page.drawLine({
+            start: { x, y: y - Math.max(2, segment.size * 0.08) },
+            end: { x: x + segment.width, y: y - Math.max(2, segment.size * 0.08) },
+            thickness: Math.max(1, segment.size * 0.06),
+            color: segment.color
+          });
+        }
+
+        if (segment.strike) {
+          page.drawLine({
+            start: { x, y: y + segment.size * 0.35 },
+            end: { x: x + segment.width, y: y + segment.size * 0.35 },
+            thickness: Math.max(1, segment.size * 0.06),
+            color: segment.color
+          });
+        }
+
+        x += segment.width;
       });
-
-      if (underline && line) {
-        page.drawLine({
-          start: { x, y: y - Math.max(2, fontSize * 0.08) },
-          end: { x: x + textWidth, y: y - Math.max(2, fontSize * 0.08) },
-          thickness: Math.max(1, fontSize * 0.06),
-          color
-        });
-      }
-
-      if (strike && line) {
-        page.drawLine({
-          start: { x, y: y + fontSize * 0.35 },
-          end: { x: x + textWidth, y: y + fontSize * 0.35 },
-          thickness: Math.max(1, fontSize * 0.06),
-          color
-        });
-      }
+      lineCount += 1;
+      y -= line.height;
     });
 
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 
-    return { blob, lineCount: lines.length };
+    return { blob, lineCount };
   } catch (error) {
     throw error.message ? error : new Error('Unable to write on this PDF.');
   }
@@ -1105,6 +1245,178 @@ function clampNumber(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function buildQuotationRichLines(baseFontSize) {
+  const editor = quotationEditorElement();
+  if (!editor) return [];
+  const editorStyle = window.getComputedStyle(editor);
+  const editorFontSize = parseFloat(editorStyle.fontSize) || 16;
+  const baseStyle = {
+    bold: false,
+    italic: false,
+    underline: false,
+    strike: false,
+    color: editorStyle.color || document.getElementById('quotation-text-color')?.value || '#111827',
+    size: baseFontSize,
+    align: normalizeTextAlign(editorStyle.textAlign) || quotationAlign()
+  };
+  const lines = [{ align: baseStyle.align, runs: [] }];
+  const currentLine = () => lines[lines.length - 1];
+  const pushLine = align => {
+    const line = currentLine();
+    if (!line.runs.length) {
+      line.align = align || line.align || baseStyle.align;
+      return;
+    }
+    lines.push({ align: align || baseStyle.align, runs: [] });
+  };
+  const appendText = (text, style) => {
+    if (!text) return;
+    currentLine().align = style.align || currentLine().align;
+    currentLine().runs.push({
+      text,
+      bold: style.bold,
+      italic: style.italic,
+      underline: style.underline,
+      strike: style.strike,
+      color: style.color,
+      size: style.size
+    });
+  };
+  const walk = (node, inherited) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      appendText(node.nodeValue || '', inherited);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const element = node;
+    const tag = element.tagName;
+    if (tag === 'BR') {
+      pushLine(inherited.align);
+      return;
+    }
+
+    const computed = window.getComputedStyle(element);
+    const textDecoration = `${computed.textDecorationLine || ''} ${computed.textDecoration || ''}`;
+    const align = normalizeTextAlign(computed.textAlign) || inherited.align;
+    const nextStyle = {
+      bold: inherited.bold || tag === 'B' || tag === 'STRONG' || Number.parseInt(computed.fontWeight, 10) >= 600,
+      italic: inherited.italic || tag === 'I' || tag === 'EM' || computed.fontStyle === 'italic' || computed.fontStyle === 'oblique',
+      underline: inherited.underline || tag === 'U' || textDecoration.includes('underline'),
+      strike: inherited.strike || tag === 'S' || tag === 'STRIKE' || textDecoration.includes('line-through'),
+      color: computed.color || inherited.color,
+      size: baseFontSize * ((parseFloat(computed.fontSize) || editorFontSize) / editorFontSize),
+      align
+    };
+    const display = computed.display || '';
+    const isBlock = ['DIV', 'P', 'LI'].includes(tag) || display.includes('block') || display === 'list-item';
+    if (isBlock) pushLine(nextStyle.align);
+    if (tag === 'LI') appendText('• ', nextStyle);
+    Array.from(element.childNodes).forEach(child => walk(child, nextStyle));
+    if (isBlock) pushLine(inherited.align);
+  };
+
+  Array.from(editor.childNodes).forEach(child => walk(child, baseStyle));
+  while (lines.length > 1 && !lines[lines.length - 1].runs.length) lines.pop();
+  return lines;
+}
+
+function normalizeTextAlign(value) {
+  if (value === 'center') return 'center';
+  if (value === 'right' || value === 'end') return 'right';
+  if (value === 'left' || value === 'start') return 'left';
+  return '';
+}
+
+function layoutQuotationRichLines(sourceLines, fonts, rgb, fallbackColor, maxWidth) {
+  const lines = [];
+  sourceLines.forEach(sourceLine => {
+    let line = newQuotationPdfLine(sourceLine.align);
+    const pushLine = () => {
+      trimQuotationLine(line);
+      lines.push(line);
+      line = newQuotationPdfLine(sourceLine.align);
+    };
+
+    if (!sourceLine.runs.length) {
+      pushLine();
+      return;
+    }
+
+    sourceLine.runs.forEach(run => {
+      const font = quotationRunFont(run, fonts);
+      const color = pdfColorFromCss(run.color, rgb, fallbackColor);
+      const size = clampNumber(run.size || 48, 8, 220);
+      const safeText = makePdfTextSafe(normalizePdfText(run.text), font);
+      safeText.split(/(\s+)/).filter(Boolean).forEach(part => {
+        const text = /^\s+$/.test(part) ? ' ' : part;
+        const pieces = splitRichPdfToken(text, font, size, maxWidth);
+        pieces.forEach(piece => {
+          if (piece === ' ' && !line.segments.length) return;
+          const width = font.widthOfTextAtSize(piece, size);
+          if (piece.trim() && line.segments.length && line.width + width > maxWidth) pushLine();
+          if (piece === ' ' && !line.segments.length) return;
+          line.segments.push({
+            text: piece,
+            width,
+            size,
+            font,
+            color,
+            underline: run.underline,
+            strike: run.strike
+          });
+          line.width += width;
+          line.maxSize = Math.max(line.maxSize, size);
+          line.height = Math.max(line.height, line.maxSize * 1.28);
+        });
+      });
+    });
+    pushLine();
+  });
+  return lines;
+}
+
+function newQuotationPdfLine(align) {
+  return {
+    align: align || 'left',
+    segments: [],
+    width: 0,
+    maxSize: clampNumber(safeNumber('quotation-font-size', 48), 10, 180),
+    height: clampNumber(safeNumber('quotation-font-size', 48), 10, 180) * 1.28
+  };
+}
+
+function trimQuotationLine(line) {
+  while (line.segments.length && !line.segments[line.segments.length - 1].text.trim()) {
+    const segment = line.segments.pop();
+    line.width -= segment.width;
+  }
+}
+
+function quotationRunFont(run, fonts) {
+  if (run.bold && run.italic) return fonts.boldItalic;
+  if (run.bold) return fonts.bold;
+  if (run.italic) return fonts.italic;
+  return fonts.regular;
+}
+
+function splitRichPdfToken(text, font, size, maxWidth) {
+  if (text === ' ' || font.widthOfTextAtSize(text, size) <= maxWidth) return [text];
+  const chunks = [];
+  let chunk = '';
+  Array.from(text).forEach(char => {
+    const next = `${chunk}${char}`;
+    if (font.widthOfTextAtSize(next, size) <= maxWidth || !chunk) {
+      chunk = next;
+      return;
+    }
+    chunks.push(chunk);
+    chunk = char;
+  });
+  if (chunk) chunks.push(chunk);
+  return chunks;
+}
+
 function standardFontForStyle(style, StandardFonts) {
   if (style === 'bold') return StandardFonts.HelveticaBold;
   if (style === 'italic') return StandardFonts.HelveticaOblique;
@@ -1119,6 +1431,19 @@ function pdfColorFromHex(hex, rgb) {
   const green = parseInt(value.slice(2, 4), 16) / 255;
   const blue = parseInt(value.slice(4, 6), 16) / 255;
   return rgb(red, green, blue);
+}
+
+function pdfColorFromCss(value, rgb, fallback) {
+  const color = String(value || '').trim();
+  if (/^#[0-9a-f]{6}$/i.test(color)) return pdfColorFromHex(color, rgb);
+  const rgbMatch = color.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgbMatch) {
+    const [red, green, blue] = rgbMatch[1].split(',').map(part => Number.parseFloat(part.trim()));
+    if ([red, green, blue].every(Number.isFinite)) {
+      return rgb(clampNumber(red, 0, 255) / 255, clampNumber(green, 0, 255) / 255, clampNumber(blue, 0, 255) / 255);
+    }
+  }
+  return fallback || pdfColorFromHex('#111827', rgb);
 }
 
 function normalizePdfText(text) {
