@@ -1237,7 +1237,7 @@ body.compact-quotation-view .mobile-menu {
   position: absolute;
   z-index: 4;
   display: none;
-  min-width: 0;
+  min-width: 1px;
   border: 0;
   border-radius: 0;
   outline: 0;
@@ -1247,8 +1247,8 @@ body.compact-quotation-view .mobile-menu {
   color: #111827;
   background: transparent;
   font-family: Arial, Helvetica, sans-serif;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
+  white-space: pre;
+  overflow-wrap: normal;
   word-break: normal;
   box-shadow: none;
   caret-color: #0284c7;

@@ -1,11 +1,12 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '76';
+const APP_VERSION = '78';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
 const GST_LOOKUP_ENDPOINT = window.NBM_GST_LOOKUP_ENDPOINT || 'https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fgst.jamku.app%2Fgstin%2F{gstin}';
 const DEFAULT_QUOTATION_PDF = './assets/nbm-quotation-template.pdf';
 const DEFAULT_QUOTATION_NAME = 'NBM Quotation Paper.pdf';
+const QUOTATION_FREE_TEXT_WIDTH_MULTIPLIER = 100;
 let lockedPageScrollY = 0;
 let gstFetchInProgress = false;
 let quotationPdfFile = null;
@@ -898,8 +899,8 @@ function dragQuotationEditor(event) {
   const { editor, startClientX, startClientY, startBox } = quotationEditorDrag;
   const dx = (event.clientX - startClientX) / quotationPreviewScale;
   const dy = (event.clientY - startClientY) / quotationPreviewScale;
-  const nextX = clampNumber(startBox.x + dx, 0, Math.max(0, quotationPreviewPageSize.width - 40));
-  const nextY = clampNumber(startBox.y + dy, 0, Math.max(0, quotationPreviewPageSize.height - quotationEditorFontSize(editor)));
+  const nextX = clampNumber(startBox.x + dx, 0, Math.max(0, quotationPreviewPageSize.width));
+  const nextY = clampNumber(startBox.y + dy, 0, Math.max(0, quotationPreviewPageSize.height));
   setQuotationEditorBox(editor, {
     x: nextX,
     y: nextY,
@@ -973,10 +974,14 @@ function setQuotationEditorBox(editor, box) {
 
 function quotationEditorBox(editor, pageWidth = quotationPreviewPageSize.width, pageHeight = quotationPreviewPageSize.height) {
   const fontSize = quotationEditorFontSize(editor);
-  const x = clampNumber(Number(editor?.dataset.boxX) || safeNumber('quotation-box-x', 150), 0, Math.max(0, pageWidth - 40));
-  const y = clampNumber(Number(editor?.dataset.boxY) || safeNumber('quotation-box-y', 761), 0, Math.max(0, pageHeight - fontSize));
-  const width = clampNumber(Number(editor?.dataset.boxWidth) || safeNumber('quotation-box-width', 2270), 40, Math.max(40, pageWidth - x - 12));
-  const height = clampNumber(Number(editor?.dataset.boxHeight) || safeNumber('quotation-box-height', 2224), fontSize * 1.5, Math.max(fontSize * 1.5, pageHeight - y - 12));
+  const rawX = Number(editor?.dataset.boxX ?? safeNumber('quotation-box-x', 150));
+  const rawY = Number(editor?.dataset.boxY ?? safeNumber('quotation-box-y', 761));
+  const rawWidth = Number(editor?.dataset.boxWidth ?? safeNumber('quotation-box-width', pageWidth));
+  const rawHeight = Number(editor?.dataset.boxHeight ?? safeNumber('quotation-box-height', pageHeight));
+  const x = clampNumber(Number.isFinite(rawX) ? rawX : 150, 0, Math.max(0, pageWidth));
+  const y = clampNumber(Number.isFinite(rawY) ? rawY : 761, 0, Math.max(0, pageHeight));
+  const width = clampNumber(Number.isFinite(rawWidth) ? rawWidth : pageWidth, 1, Math.max(1, pageWidth * QUOTATION_FREE_TEXT_WIDTH_MULTIPLIER));
+  const height = clampNumber(Number.isFinite(rawHeight) ? rawHeight : pageHeight, fontSize, Math.max(fontSize, pageHeight * QUOTATION_FREE_TEXT_WIDTH_MULTIPLIER));
   return { x, y, width, height };
 }
 
@@ -1203,15 +1208,12 @@ function wrapQuotationSelectionWithStyle(styles) {
 }
 
 function setQuotationTypingPosition(x, y, editor = quotationEditorElement()) {
-  const fontSize = quotationEditorFontSize(editor);
   const pageWidth = quotationPreviewPageSize.width;
   const pageHeight = quotationPreviewPageSize.height;
-  const margin = 24;
-  const minWidth = Math.min(360, Math.max(120, pageWidth - margin * 2));
-  const safeX = clampNumber(x, margin, Math.max(margin, pageWidth - minWidth - margin));
-  const safeY = clampNumber(y, margin, Math.max(margin, pageHeight - fontSize * 1.5 - margin));
-  const width = Math.max(minWidth, pageWidth - safeX - margin);
-  const height = Math.max(fontSize * 1.6, pageHeight - safeY - margin);
+  const safeX = clampNumber(x, 0, Math.max(0, pageWidth));
+  const safeY = clampNumber(y, 0, Math.max(0, pageHeight));
+  const width = 1;
+  const height = Math.max(1, pageHeight * QUOTATION_FREE_TEXT_WIDTH_MULTIPLIER);
 
   setQuotationEditorBox(editor, { x: safeX, y: safeY, width, height });
 }
@@ -1476,31 +1478,16 @@ function updateQuotationLivePreview() {
     input.style.display = 'block';
     input.style.left = `${Math.round(box.x * scale)}px`;
     input.style.top = `${Math.round(box.y * scale)}px`;
-    input.style.width = `${Math.round(box.width * scale)}px`;
+    input.style.width = 'max-content';
+    input.style.maxWidth = 'none';
     input.style.height = 'auto';
     input.style.minHeight = `${Math.round(cssLineHeight * 1.6)}px`;
     input.style.fontSize = `${Math.max(9, fontSize * scale)}px`;
     input.style.lineHeight = '1.28';
     input.style.color = document.getElementById('quotation-text-color')?.value || '#111827';
 
-    const neededCssHeight = Math.max(cssLineHeight * 1.6, cssLineHeight * (textLines + 1) + 10, input.scrollHeight + 8);
-    let availableCssHeight = Math.max(cssLineHeight * 1.6, (quotationPreviewPageSize.height - box.y - 8) * scale);
-    if (neededCssHeight > availableCssHeight && box.y > 8) {
-      const shiftPdf = Math.ceil((neededCssHeight - availableCssHeight) / scale);
-      const nextY = clampNumber(box.y - shiftPdf, 8, box.y);
-      if (nextY !== box.y) {
-        setQuotationEditorBox(input, {
-          x: box.x,
-          y: nextY,
-          width: box.width,
-          height: Math.max(box.height, quotationPreviewPageSize.height - nextY - 8)
-        });
-        box = quotationEditorBox(input);
-        availableCssHeight = Math.max(cssLineHeight * 1.6, (quotationPreviewPageSize.height - box.y - 8) * scale);
-        input.style.top = `${Math.round(box.y * scale)}px`;
-      }
-    }
-    const cssHeight = Math.min(neededCssHeight, availableCssHeight);
+    const neededCssHeight = Math.max(cssLineHeight, cssLineHeight * textLines, input.scrollHeight);
+    const cssHeight = neededCssHeight;
     input.style.height = `${Math.round(cssHeight)}px`;
 
     if (input.id === quotationActiveEditorId) {
@@ -1516,15 +1503,15 @@ function updateQuotationLivePreview() {
   }
 }
 
-function updateQuotationBlockHandle(cssX, cssY, cssWidth) {
+function updateQuotationBlockHandle(cssX, cssY) {
   const handle = document.getElementById('quotation-block-handle');
   if (!handle || !quotationActiveEditorId) {
     hideQuotationBlockHandle();
     return;
   }
   handle.style.display = 'inline-flex';
-  handle.style.left = `${Math.round(cssX + cssWidth + 8)}px`;
-  handle.style.top = `${Math.round(Math.max(4, cssY - 18))}px`;
+  handle.style.left = `${Math.round(Math.max(4, cssX - 40))}px`;
+  handle.style.top = `${Math.round(Math.max(4, cssY - 44))}px`;
 }
 
 function hideQuotationBlockHandle() {
@@ -1650,13 +1637,14 @@ async function buildQuotationPdfBlob() {
       const fontSize = quotationEditorFontSize(editor);
       const box = quotationEditorBox(editor, width, height);
       const boxTopY = height - box.y;
-      const boxBottomY = Math.max(12, boxTopY - box.height);
-      const richLines = layoutQuotationRichLines(buildQuotationRichLines(fontSize, editor), fonts, rgb, defaultColor, box.width, fontSize);
+      const noWrapWidth = Math.max(width, height) * QUOTATION_FREE_TEXT_WIDTH_MULTIPLIER;
+      const boxBottomY = Math.max(-height * QUOTATION_FREE_TEXT_WIDTH_MULTIPLIER, boxTopY - box.height);
+      const richLines = layoutQuotationRichLines(buildQuotationRichLines(fontSize, editor), fonts, rgb, defaultColor, noWrapWidth, fontSize);
       let y = boxTopY - fontSize;
 
       richLines.forEach(line => {
         if (y < boxBottomY) return;
-        let x = alignedPdfX(box.x, box.width, Math.min(line.width, box.width), line.align || align);
+        let x = alignedFreePdfX(box.x, line.width, line.align || align);
         line.segments.forEach(segment => {
           if (!segment.text.trim()) {
             x += segment.width;
@@ -1993,6 +1981,12 @@ function alignedPdfX(boxX, boxWidth, textWidth, align) {
   if (align === 'center') return boxX + Math.max(0, (boxWidth - textWidth) / 2);
   if (align === 'right') return boxX + Math.max(0, boxWidth - textWidth);
   return boxX;
+}
+
+function alignedFreePdfX(anchorX, textWidth, align) {
+  if (align === 'center') return anchorX - textWidth / 2;
+  if (align === 'right') return anchorX - textWidth;
+  return anchorX;
 }
 
 function revokeQuotationDownload() {
