@@ -1266,37 +1266,6 @@ body.compact-quotation-view .mobile-menu {
   box-shadow: none;
 }
 
-.quotation-block-handle {
-  position: absolute;
-  z-index: 6;
-  width: 34px;
-  height: 34px;
-  border: 2px solid #ffffff;
-  border-radius: 999px;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  background: #0284c7;
-  box-shadow: 0 10px 26px rgba(8, 47, 73, 0.25);
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.quotation-block-handle::before {
-  content: "";
-  width: 14px;
-  height: 14px;
-  background-image: radial-gradient(currentColor 2px, transparent 2px);
-  background-size: 7px 7px;
-}
-
-.quotation-block-handle:active {
-  cursor: grabbing;
-}
-
 .quotation-live-input b,
 .quotation-live-input strong {
   font-weight: 800;

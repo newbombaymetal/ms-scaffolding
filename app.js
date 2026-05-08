@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '78';
+const APP_VERSION = '79';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -25,7 +25,6 @@ let quotationEditorCounter = 1;
 let quotationZoomLevel = 1;
 let quotationPinchGesture = null;
 let quotationPinchRenderTimer = null;
-let quotationEditorDrag = null;
 
 const sampleBillBooks = [
   { name: 'SALES BOOK 2025-26', type: 'Sales', used: 88, total: 100, status: 'Low Stock' },
@@ -249,8 +248,7 @@ function wireEvents() {
   document.getElementById('quotation-text-color').addEventListener('input', handleQuotationColorChange);
   document.querySelectorAll('[data-quotation-action]').forEach(button => button.addEventListener('click', handleQuotationAction));
   document.querySelectorAll('[data-quotation-toggle]').forEach(button => button.addEventListener('click', handleQuotationToggle));
-  document.querySelectorAll('[data-quotation-align]').forEach(button => button.addEventListener('click', handleQuotationAlign));
-  document.querySelectorAll('button[data-quotation-action], button[data-quotation-toggle], button[data-quotation-align]').forEach(button => {
+  document.querySelectorAll('button[data-quotation-action], button[data-quotation-toggle]').forEach(button => {
     button.addEventListener('pointerdown', preserveQuotationSelectionOnTool);
   });
   document.getElementById('quotation-controls-toggle').addEventListener('click', event => {
@@ -260,7 +258,6 @@ function wireEvents() {
   document.getElementById('write-quotation-pdf')?.addEventListener('click', writeQuotationPdf);
   document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
   document.getElementById('clear-quotation-page').addEventListener('click', clearQuotationPage);
-  document.getElementById('quotation-block-handle').addEventListener('pointerdown', startQuotationEditorDrag);
   window.addEventListener('resize', scheduleQuotationPreviewRender);
   document.getElementById('new-invoice').addEventListener('click', () => toast('Invoice creator can be wired next'));
   document.getElementById('add-party').addEventListener('click', openPartyForm);
@@ -866,55 +863,11 @@ function createQuotationEditorBlock() {
   editor.setAttribute('aria-label', 'Type on quotation paper');
   editor.dataset.fontSize = String(safeNumber('quotation-font-size', 48));
   const paper = document.getElementById('quotation-paper');
-  const handle = document.getElementById('quotation-block-handle');
-  paper.insertBefore(editor, handle);
+  const empty = document.getElementById('quotation-preview-empty');
+  paper.insertBefore(editor, empty);
   setupQuotationEditor(editor);
   setActiveQuotationEditor(editor);
   return editor;
-}
-
-function startQuotationEditorDrag(event) {
-  const editor = quotationEditorElement();
-  if (!editor || !quotationPreviewScale || !quotationPreviewPageSize.width) return;
-  event.preventDefault();
-  event.stopPropagation();
-  setActiveQuotationEditor(editor, true);
-  const box = quotationEditorBox(editor);
-  quotationEditorDrag = {
-    editor,
-    pointerId: event.pointerId,
-    startClientX: event.clientX,
-    startClientY: event.clientY,
-    startBox: box
-  };
-  event.currentTarget.setPointerCapture?.(event.pointerId);
-  window.addEventListener('pointermove', dragQuotationEditor);
-  window.addEventListener('pointerup', stopQuotationEditorDrag, { once: true });
-  window.addEventListener('pointercancel', stopQuotationEditorDrag, { once: true });
-}
-
-function dragQuotationEditor(event) {
-  if (!quotationEditorDrag || event.pointerId !== quotationEditorDrag.pointerId) return;
-  event.preventDefault();
-  const { editor, startClientX, startClientY, startBox } = quotationEditorDrag;
-  const dx = (event.clientX - startClientX) / quotationPreviewScale;
-  const dy = (event.clientY - startClientY) / quotationPreviewScale;
-  const nextX = clampNumber(startBox.x + dx, 0, Math.max(0, quotationPreviewPageSize.width));
-  const nextY = clampNumber(startBox.y + dy, 0, Math.max(0, quotationPreviewPageSize.height));
-  setQuotationEditorBox(editor, {
-    x: nextX,
-    y: nextY,
-    width: startBox.width,
-    height: startBox.height
-  });
-  markQuotationDirty();
-  updateQuotationLivePreview();
-}
-
-function stopQuotationEditorDrag() {
-  if (!quotationEditorDrag) return;
-  quotationEditorDrag = null;
-  window.removeEventListener('pointermove', dragQuotationEditor);
 }
 
 function placeQuotationCaretFromPoint(editor, clientX, clientY) {
@@ -1076,15 +1029,6 @@ function syncQuotationToolbarFromSelection() {
   document.getElementById('quotation-underline').value = underline ? 'true' : 'false';
   document.getElementById('quotation-strike').value = strike ? 'true' : 'false';
   document.getElementById('quotation-font-style').value = quotationFontStyle();
-  const align = document.queryCommandState?.('justifyCenter')
-    ? 'center'
-    : document.queryCommandState?.('justifyRight')
-      ? 'right'
-      : 'left';
-  document.querySelectorAll('[data-quotation-align]').forEach(button => {
-    button.classList.toggle('active', button.dataset.quotationAlign === align);
-  });
-  document.getElementById('quotation-align').value = align;
 }
 
 function handleQuotationPaperClick(event) {
@@ -1153,16 +1097,6 @@ function handleQuotationToggle(event) {
   if (commands[name]) runQuotationCommand(commands[name]);
 }
 
-function handleQuotationAlign(event) {
-  const align = event.currentTarget.dataset.quotationAlign || 'left';
-  const command = align === 'center' ? 'justifyCenter' : align === 'right' ? 'justifyRight' : 'justifyLeft';
-  runQuotationCommand(command);
-  document.querySelectorAll('[data-quotation-align]').forEach(button => {
-    button.classList.toggle('active', button.dataset.quotationAlign === align);
-  });
-  document.getElementById('quotation-align').value = align;
-}
-
 function insertQuotationText(text) {
   runQuotationCommand('insertText', text);
 }
@@ -1225,8 +1159,8 @@ function resetQuotationFormatState() {
   document.getElementById('quotation-underline').value = 'false';
   document.getElementById('quotation-strike').value = 'false';
   document.getElementById('quotation-text-color').value = '#111827';
-  document.querySelectorAll('[data-quotation-toggle], [data-quotation-align]').forEach(button => {
-    button.classList.toggle('active', button.dataset.quotationAlign === 'left');
+  document.querySelectorAll('[data-quotation-toggle]').forEach(button => {
+    button.classList.remove('active');
   });
   refreshQuotationToolbarState();
 }
@@ -1454,7 +1388,6 @@ function resetQuotationPreview(message) {
   quotationEditorElements().forEach(input => {
     input.style.display = 'none';
   });
-  hideQuotationBlockHandle();
   if (empty) {
     empty.textContent = message;
     empty.classList.remove('hidden');
@@ -1466,7 +1399,6 @@ function updateQuotationLivePreview() {
   if (!quotationPreviewScale || !quotationPreviewPageSize.width) return;
 
   const scale = quotationPreviewScale;
-  let activeGuideBox = null;
 
   quotationEditorElements().forEach(input => {
     setupQuotationEditor(input);
@@ -1490,33 +1422,9 @@ function updateQuotationLivePreview() {
     const cssHeight = neededCssHeight;
     input.style.height = `${Math.round(cssHeight)}px`;
 
-    if (input.id === quotationActiveEditorId) {
-      activeGuideBox = { cssX: box.x * scale, cssY: box.y * scale, cssWidth: box.width * scale, cssHeight, pdfX: box.x, pdfY: box.y };
-    }
   });
 
   refreshQuotationToolbarState();
-  if (activeGuideBox) {
-    updateQuotationBlockHandle(activeGuideBox.cssX, activeGuideBox.cssY, activeGuideBox.cssWidth, activeGuideBox.cssHeight);
-  } else {
-    hideQuotationBlockHandle();
-  }
-}
-
-function updateQuotationBlockHandle(cssX, cssY) {
-  const handle = document.getElementById('quotation-block-handle');
-  if (!handle || !quotationActiveEditorId) {
-    hideQuotationBlockHandle();
-    return;
-  }
-  handle.style.display = 'inline-flex';
-  handle.style.left = `${Math.round(Math.max(4, cssX - 40))}px`;
-  handle.style.top = `${Math.round(Math.max(4, cssY - 44))}px`;
-}
-
-function hideQuotationBlockHandle() {
-  const handle = document.getElementById('quotation-block-handle');
-  if (handle) handle.style.display = 'none';
 }
 
 function refreshQuotationToolbarState() {
@@ -1542,7 +1450,7 @@ function quotationFontStyle() {
 }
 
 function quotationAlign() {
-  return document.querySelector('[data-quotation-align].active')?.dataset.quotationAlign || document.getElementById('quotation-align')?.value || 'left';
+  return document.getElementById('quotation-align')?.value || 'left';
 }
 
 function quotationBoolean(name) {
@@ -1761,7 +1669,6 @@ function buildQuotationRichLines(baseFontSize, editor = quotationEditorElement()
     if (node.nodeType !== Node.ELEMENT_NODE) return;
 
     const element = node;
-    if (element.classList?.contains('quotation-block-handle')) return;
     const tag = element.tagName;
     if (tag === 'BR') {
       pushLine(inherited.align);
