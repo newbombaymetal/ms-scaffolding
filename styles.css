@@ -1266,6 +1266,11 @@ body.compact-quotation-view .mobile-menu {
   box-shadow: none;
 }
 
+.quotation-live-input::selection,
+.quotation-live-input *::selection {
+  background: rgba(2, 132, 199, 0.24);
+}
+
 .quotation-live-input.active[data-empty="true"]::before {
   content: "";
   display: inline-block;

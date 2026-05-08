@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '80';
+const APP_VERSION = '81';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -255,6 +255,7 @@ function wireEvents() {
     event.preventDefault();
     toggleQuotationControls();
   });
+  document.getElementById('quotation-controls-toggle').addEventListener('pointerdown', preserveQuotationSelectionOnTool);
   document.getElementById('write-quotation-pdf')?.addEventListener('click', writeQuotationPdf);
   document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
   document.getElementById('clear-quotation-page').addEventListener('click', clearQuotationPage);
@@ -830,9 +831,22 @@ function setupQuotationEditor(editor) {
   setQuotationEditorEditable(editor, !isMobileQuotationLayout() || editor.id === quotationActiveEditorId);
   editor.addEventListener('input', handleQuotationEditorChange);
   editor.addEventListener('focus', () => setActiveQuotationEditor(editor, true));
+  editor.addEventListener('pointerdown', () => setActiveQuotationEditor(editor, true));
   editor.addEventListener('click', event => {
-    activateQuotationEditor(editor, { keepSelection: true, clientX: event.clientX, clientY: event.clientY });
+    event.stopPropagation();
+    setActiveQuotationEditor(editor, true);
+    window.setTimeout(() => {
+      saveQuotationSelection();
+      syncQuotationToolbarFromSelection();
+    }, 0);
   });
+  editor.addEventListener('dblclick', () => {
+    window.setTimeout(() => {
+      saveQuotationSelection();
+      syncQuotationToolbarFromSelection();
+    }, 0);
+  });
+  editor.addEventListener('keydown', handleQuotationEditorKeydown);
   editor.addEventListener('keyup', saveQuotationSelection);
   editor.addEventListener('pointerup', saveQuotationSelection);
   editor.addEventListener('blur', saveQuotationSelection);
@@ -1107,6 +1121,22 @@ function handleQuotationToggle(event) {
 
 function insertQuotationText(text) {
   runQuotationCommand('insertText', text);
+}
+
+function handleQuotationEditorKeydown(event) {
+  if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+  const editor = event.currentTarget;
+  if (!quotationHasTextSelection(editor)) return;
+  event.preventDefault();
+  setActiveQuotationEditor(editor, true);
+  try {
+    document.execCommand('delete');
+  } catch (error) {
+    console.warn('Text delete failed', error);
+  }
+  quotationSavedRange = null;
+  handleQuotationEditorChange();
+  saveQuotationSelection();
 }
 
 function applyQuotationSelectionFontSize(delta) {
