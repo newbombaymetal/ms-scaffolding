@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '79';
+const APP_VERSION = '80';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -755,6 +755,7 @@ async function handleQuotationPdf(event) {
 }
 
 function handleQuotationEditorChange() {
+  quotationEditorElements().forEach(syncQuotationEditorEmptyState);
   markQuotationDirty();
   refreshQuotationToolbarState();
   updateQuotationLivePreview();
@@ -805,9 +806,15 @@ function syncQuotationEditorEditability(activeEditor = null) {
   const currentActiveEditor = activeEditor || (quotationActiveEditorId ? document.getElementById(quotationActiveEditorId) : null);
   const keepAllEditable = !isMobileQuotationLayout();
   quotationEditorElements().forEach(editor => {
+    syncQuotationEditorEmptyState(editor);
     setQuotationEditorEditable(editor, keepAllEditable || editor === currentActiveEditor);
     editor.classList.toggle('active', editor === currentActiveEditor);
   });
+}
+
+function syncQuotationEditorEmptyState(editor) {
+  if (!editor) return;
+  editor.dataset.empty = quotationEditorText(editor).length ? 'false' : 'true';
 }
 
 function setupQuotationEditor(editor) {
@@ -819,6 +826,7 @@ function setupQuotationEditor(editor) {
   editor.dataset.boxY = editor.dataset.boxY || document.getElementById('quotation-box-y')?.value || '761';
   editor.dataset.boxWidth = editor.dataset.boxWidth || document.getElementById('quotation-box-width')?.value || '2270';
   editor.dataset.boxHeight = editor.dataset.boxHeight || document.getElementById('quotation-box-height')?.value || '2224';
+  syncQuotationEditorEmptyState(editor);
   setQuotationEditorEditable(editor, !isMobileQuotationLayout() || editor.id === quotationActiveEditorId);
   editor.addEventListener('input', handleQuotationEditorChange);
   editor.addEventListener('focus', () => setActiveQuotationEditor(editor, true));
@@ -1402,6 +1410,7 @@ function updateQuotationLivePreview() {
 
   quotationEditorElements().forEach(input => {
     setupQuotationEditor(input);
+    syncQuotationEditorEmptyState(input);
     const fontSize = quotationEditorFontSize(input);
     let box = quotationEditorBox(input);
     const cssLineHeight = Math.max(14, fontSize * scale * 1.28);

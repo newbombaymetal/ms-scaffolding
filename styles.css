@@ -1266,6 +1266,30 @@ body.compact-quotation-view .mobile-menu {
   box-shadow: none;
 }
 
+.quotation-live-input.active[data-empty="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.18em;
+  border-radius: 999px;
+  background: #0284c7;
+  pointer-events: none;
+  vertical-align: top;
+  animation: quotation-caret-blink 1s steps(1, end) infinite;
+}
+
+@keyframes quotation-caret-blink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+
+  56%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
 .quotation-live-input b,
 .quotation-live-input strong {
   font-weight: 800;
