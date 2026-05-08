@@ -1119,7 +1119,7 @@ body.compact-quotation-view .mobile-menu {
 
 .quotation-studio {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 420px);
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
   gap: 18px;
   align-items: start;
 }
@@ -1257,8 +1257,8 @@ body.compact-quotation-view .mobile-menu {
 }
 
 .quotation-live-input.active {
-  outline: 1px solid rgba(14, 165, 233, 0.42);
-  outline-offset: 4px;
+  outline: 0;
+  outline-offset: 0;
 }
 
 .quotation-live-input:focus {
@@ -1585,7 +1585,7 @@ body.compact-quotation-view .quotation-panel {
 }
 
 body.compact-quotation-view .quotation-studio {
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
   gap: 0;
   min-height: calc(100dvh - 120px);
   overflow: hidden;

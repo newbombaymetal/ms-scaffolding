@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#070B16">
   <meta name="application-name" content="NBM">
-  <meta name="app-version" content="75">
+  <meta name="app-version" content="76">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>NBM</title>
@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NBM">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="manifest" href="manifest.json?v=75">
+  <link rel="manifest" href="manifest.json?v=76">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=75">
+  <link rel="stylesheet" href="styles.css?v=76">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -290,12 +290,9 @@
                   <span class="quotation-size-pill" id="quotation-size-pill">48</span>
                 </div>
 
-                <div class="quotation-page-control">
-                  <span>Page</span>
-                  <input id="quotation-page-number" type="number" min="1" value="1">
-                </div>
               </div>
 
+              <input id="quotation-page-number" type="hidden" value="1">
               <input id="quotation-font-size" type="hidden" value="48">
               <input id="quotation-font-style" type="hidden" value="regular">
               <input id="quotation-align" type="hidden" value="left">
@@ -308,10 +305,6 @@
               <input id="quotation-box-height" type="hidden" value="2224">
 
               <div class="quotation-actions">
-                <button class="accent-action compact" id="write-quotation-pdf" type="button">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  Write On PDF
-                </button>
                 <button class="wide-action compact print-action" id="print-quotation-pdf" type="button">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
                   Print Preview
@@ -455,6 +448,6 @@
   <div class="toast hidden" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="app.js?v=75"></script>
+  <script src="app.js?v=76"></script>
 </body>
 </html>

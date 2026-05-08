@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '75';
+const APP_VERSION = '76';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -244,7 +244,7 @@ function wireEvents() {
   document.getElementById('quotation-zoom-out').addEventListener('click', () => changeQuotationZoom(-0.15));
   document.getElementById('quotation-zoom-reset').addEventListener('click', resetQuotationZoom);
   document.addEventListener('selectionchange', handleQuotationSelectionChange);
-  document.getElementById('quotation-page-number').addEventListener('input', handleQuotationPageChange);
+  document.getElementById('quotation-page-number')?.addEventListener('input', handleQuotationPageChange);
   document.getElementById('quotation-text-color').addEventListener('input', handleQuotationColorChange);
   document.querySelectorAll('[data-quotation-action]').forEach(button => button.addEventListener('click', handleQuotationAction));
   document.querySelectorAll('[data-quotation-toggle]').forEach(button => button.addEventListener('click', handleQuotationToggle));
@@ -256,7 +256,7 @@ function wireEvents() {
     event.preventDefault();
     toggleQuotationControls();
   });
-  document.getElementById('write-quotation-pdf').addEventListener('click', writeQuotationPdf);
+  document.getElementById('write-quotation-pdf')?.addEventListener('click', writeQuotationPdf);
   document.getElementById('print-quotation-pdf').addEventListener('click', openQuotationPrintPreview);
   document.getElementById('clear-quotation-page').addEventListener('click', clearQuotationPage);
   document.getElementById('quotation-block-handle').addEventListener('pointerdown', startQuotationEditorDrag);
@@ -1564,7 +1564,7 @@ function quotationBoolean(name) {
 
 async function writeQuotationPdf() {
   const button = document.getElementById('write-quotation-pdf');
-  button.disabled = true;
+  if (button) button.disabled = true;
   setText('quotation-status', 'Writing PDF...');
 
   try {
@@ -1575,7 +1575,7 @@ async function writeQuotationPdf() {
     console.error(error);
     setText('quotation-status', error.message || 'Unable to write on this PDF.');
   } finally {
-    button.disabled = false;
+    if (button) button.disabled = false;
   }
 }
 
