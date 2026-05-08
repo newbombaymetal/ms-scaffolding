@@ -1,14 +1,14 @@
 /* NBM — service worker for offline cache. */
-const APP_VERSION = '81';
+const APP_VERSION = '82';
 const CACHE = `nbm-v${APP_VERSION}`;
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=81',
-  './app.js?v=81',
-  './manifest.json?v=81',
+  './styles.css?v=82',
+  './app.js?v=82',
+  './manifest.json?v=82',
   './version.json',
-  './assets/nbm-quotation-template.pdf?v=81',
+  './assets/nbm-quotation-template.pdf?v=82',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',

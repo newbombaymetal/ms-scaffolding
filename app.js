@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'sm_app_v1';
-const APP_VERSION = '81';
+const APP_VERSION = '82';
 const UPDATE_RELOAD_KEY = 'nbm_update_reload_version';
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
 const UPDATE_RETRY_DELAY = 30 * 1000;
@@ -784,9 +784,14 @@ function setQuotationControlsHidden(hidden) {
 
 function isMobileQuotationLayout() {
   const device = new URLSearchParams(window.location.search).get('device') || '';
+  if (isNarrowQuotationLayout()) return true;
   if (/mac|web|desktop/i.test(device)) return false;
   if (/android|iphone|mobile/i.test(device)) return true;
-  return window.matchMedia?.('(max-width: 860px)').matches;
+  return false;
+}
+
+function isNarrowQuotationLayout() {
+  return Boolean(window.matchMedia?.('(max-width: 860px)').matches);
 }
 
 function keepActiveQuotationTextVisible() {
@@ -1381,10 +1386,13 @@ async function renderQuotationPreview() {
     const page = await pdf.getPage(pageNumber);
     const baseViewport = page.getViewport({ scale: 1 });
     const frame = document.getElementById('quotation-paper-frame');
-    const availableWidth = Math.max(280, (frame?.clientWidth || 780) - 24);
-    const minimumPreviewWidth = isMobileQuotationLayout() ? availableWidth : Math.min(640, baseViewport.width);
-    const fitWidth = Math.min(baseViewport.width, Math.max(availableWidth, minimumPreviewWidth));
-    const targetCssWidth = Math.max(220, fitWidth * quotationZoomLevel);
+    const frameStyle = frame ? window.getComputedStyle(frame) : null;
+    const framePadding = frameStyle
+      ? (parseFloat(frameStyle.paddingLeft) || 0) + (parseFloat(frameStyle.paddingRight) || 0)
+      : 24;
+    const availableWidth = Math.max(220, (frame?.clientWidth || 780) - framePadding);
+    const fitWidth = Math.min(baseViewport.width, availableWidth);
+    const targetCssWidth = clampNumber(fitWidth * quotationZoomLevel, 220, baseViewport.width * quotationZoomLevel);
     const cssScale = targetCssWidth / baseViewport.width;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
     const viewport = page.getViewport({ scale: cssScale * pixelRatio });

@@ -2303,16 +2303,12 @@ body.quotation-controls-hidden .quotation-studio {
   }
 
   body.compact-quotation-view:not(.quotation-controls-hidden) .quotation-controls {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: calc(12px + var(--safe-bottom));
-    z-index: 70;
-    max-height: min(70dvh, 620px);
-    overflow: auto;
-    margin-top: 0;
+    position: static;
+    max-height: none;
+    overflow: visible;
+    margin-top: 10px;
     border: 1px solid rgba(17, 24, 39, 0.12);
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+    box-shadow: none;
   }
 
   .quotation-paper {
